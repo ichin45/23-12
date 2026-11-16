@@ -1,19 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import heroBwSteamImg from '../assets/images/about_hero_bw_steam_1794787869248.jpg';
 import selfPortraitImg from '../assets/images/about_self_portrait.jpeg';
-import realityBwKnifeImg from '../assets/images/about_reality_bw_knife_1794787871008.jpg';
-import memoriesBwWindowImg from '../assets/images/about_memories_bw_window_1794787870868.jpg';
-import continuityBwSimmerImg from '../assets/images/about_continuity_bw_simmer_1794787871181.jpg';
+import topKitchenImg from '../assets/images/about_top_kitchen.png';
+import realityImg from '../assets/images/about_01_reality.png';
+import memoriesImg from '../assets/images/about_02_memories.png';
+import continuityImg from '../assets/images/about_03_continuity.png';
+import bottomStoveImg from '../assets/images/about_bottom_stove.png';
 
 const SOCIAL_LINKS = [
-  { label: 'Behance', href: 'https://www.behance.net/' },
-  { label: 'Photography Instagram', href: 'https://www.instagram.com/' },
-  { label: 'simmer Instagram', href: 'https://www.instagram.com/' },
+  { label: 'Behance', href: 'https://www.behance.net/1Chin' },
+  { label: 'Instagram', href: 'https://www.instagram.com/simmer.n__________/' },
 ];
+
+const CHAPTERS = [
+  {
+    num: '01',
+    title: 'Reality',
+    subtitle: 'Beyond the virtual, there is the everyday.',
+    image: realityImg,
+    alt: 'Fresh root vegetables, carrots, and peppers on a kitchen counter',
+    description:
+      '料理與享受美食，是我與現實生活保持連結的方式\n切菜、等待水滾、試味道，以及坐下來吃飯，這些看似平凡的行為\n讓時間透過身體被感知，也讓生活有了具體的形狀',
+  },
+  {
+    num: '02',
+    title: 'Memories',
+    subtitle: 'A dish is a point in time. A place is a way back.',
+    image: memoriesImg,
+    alt: 'Electric mixer beating batter inside a glass bowl',
+    description:
+      '一道料理或許能成為一個線索\n讓我重新想起某段時間、某個地方\n以及當時的自己，正處於什麼樣的生活狀態',
+  },
+  {
+    num: '03',
+    title: 'Continuity',
+    subtitle: 'An unfinished map of a life.',
+    image: continuityImg,
+    alt: 'Eggs and dishes simmering in frying pans on the stove',
+    description:
+      '「這是一項持續進行的個人紀錄」\n數位媒介讓逐漸模糊的感官記憶，得以轉化為可觀看、可回望的軌跡\n盼未來某個時空裡，再次看見這些紀錄的我們，能夠會心一笑',
+  },
+];
+
+// Unified Typographic Scale Tokens
+// H1 height (~49px on sm+) matches H2 (~28px) + H3 (~20px) in Section 4 lockups
+const TYPE_H1_BASE =
+  'text-[42px] sm:text-[52px] font-semibold tracking-[-0.03em] text-white';
+const TYPE_H1 = `${TYPE_H1_BASE} leading-[0.95]`;
+const TYPE_H2 =
+  'text-xl sm:text-2xl font-semibold tracking-[-0.02em] leading-[1.15] text-white';
+const TYPE_H3 = 'text-sm sm:text-base font-normal text-white leading-[1.25]';
+const TYPE_NORMAL_BASE =
+  'text-xs sm:text-[13px] font-normal tracking-[0.04em] leading-[1.9]';
+const TYPE_NORMAL = `${TYPE_NORMAL_BASE} text-[#9ca3af]`;
+
+const CommaQuoteMark: React.FC<{ variant: 'open' | 'close'; className?: string }> = ({
+  variant,
+  className = 'h-7 sm:h-9 w-auto text-white shrink-0',
+}) => (
+  <svg
+    viewBox="2 4.5 30 20.5"
+    fill="currentColor"
+    aria-hidden="true"
+    className={`${className} ${variant === 'open' ? 'rotate-180' : ''}`}
+  >
+    <path d="M14 10.5C14 7.19 11.31 4.5 8 4.5C4.69 4.5 2 7.19 2 10.5C2 13.65 4.44 16.23 7.53 16.48C7.3 19.1 5.65 21.35 3.1 22.85L4.6 25C10.4 22.2 14 17.1 14 10.5Z" />
+    <path d="M32 10.5C32 7.19 29.31 4.5 26 4.5C22.69 4.5 20 7.19 20 10.5C20 13.65 22.44 16.23 25.53 16.48C25.3 19.1 23.65 21.35 21.1 22.85L22.6 25C28.4 22.2 32 17.1 32 10.5Z" />
+  </svg>
+);
+
+const VERTICAL_GUIDE_OPACITIES = Array.from({ length: 13 }, (_, i) => i / 12);
 
 export const AboutView: React.FC = () => {
   const [colonVisible, setColonVisible] = useState(true);
+  const [openChapters, setOpenChapters] = useState<Record<string, boolean>>({});
+  const [revealedOrigin, setRevealedOrigin] = useState(false);
 
   // Colon blinking frequency identical to Home (1000ms toggle)
   useEffect(() => {
@@ -22,6 +83,13 @@ export const AboutView: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const toggleChapter = (num: string) => {
+    setOpenChapters((prev) => ({
+      ...prev,
+      [num]: !prev[num],
+    }));
+  };
 
   return (
     <div className="w-full flex flex-col text-white font-sans bg-[#080808] pt-10 sm:pt-16">
@@ -47,231 +115,234 @@ export const AboutView: React.FC = () => {
         </div>
       </header>
 
-      {/* Editorial Magazine Canvas */}
-      <article className="w-full pt-8 sm:pt-12">
-        {/* TOP VISUAL — Clean Full-Width 16:9 Photograph */}
-        <section className="w-full">
-          <div className="relative w-full aspect-video overflow-hidden bg-[#080808]">
+      {/* Editorial Canvas */}
+      <article className="w-full pt-6 sm:pt-8">
+        {/* PRE-SECTION 1 — Opening Photograph Matching max-w-6xl Container Width (Responsive, Original Ratio & Color, Bottom-Half Fade to Black) */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+          <figure className="relative w-full overflow-hidden">
             <img
-              src={heroBwSteamImg}
-              alt="Monochrome close-up of steam rising from a dark iron pot"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover object-center grayscale contrast-110"
+              src={topKitchenImg}
+              alt="Sunlit kitchen counter with fresh tomatoes, chopped onions, knife, and green skillet"
+              className="w-full h-auto block"
             />
-            <div className="absolute inset-x-0 top-0 h-24 sm:h-36 bg-gradient-to-b from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-24 sm:h-40 bg-gradient-to-t from-[#080808] via-[#080808]/60 to-transparent pointer-events-none" />
-          </div>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent"
+            />
+          </figure>
         </section>
 
-        {/* SECTION 01 — Introduction (Two-Band Swiss Editorial Grid: Header Trio + Portrait & Bio) */}
-        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 sm:pb-36 space-y-20 sm:space-y-32">
-          {/* Upper Row: Title Left | Compact Tagline Middle | Links Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
-            {/* Left Column: Why I cook. & On cooking, and the act of remembering. */}
-            <div className="lg:col-span-5 space-y-2.5 min-w-0">
-              <h2 className="text-4xl sm:text-5xl lg:text-[52px] font-semibold tracking-[-0.03em] leading-[1.04] text-white">
-                Why I cook.
-              </h2>
-              <p className="text-xl sm:text-2xl lg:text-[26px] font-normal tracking-[-0.02em] leading-[1.22] text-white max-w-sm">
-                On cooking, and the act of remembering.
-              </p>
-            </div>
-
-            {/* Middle Column: Short Opening Bio */}
-            <div className="lg:col-span-3 lg:col-start-7 pt-1">
-              <p className="text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65]">
-                在數位影像與設計之外，深夜的廚房是我保留給自己的時間座標。用沒有固定食譜的料理，替日常留下氣味與溫度的刻度。
-              </p>
-            </div>
-
-            {/* Right Column: Clean External Links (No Leading Slash) */}
-            <nav
-              aria-label="External links"
-              className="lg:col-span-3 lg:col-start-10 flex flex-col lg:items-end space-y-2 pt-1 text-sm sm:text-[15px] font-normal text-white"
-            >
-              {SOCIAL_LINKS.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-1.5 leading-[1.5] text-white hover:opacity-70 transition-opacity"
-                >
-                  <span>{link.label}</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-white shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-                </a>
-              ))}
-            </nav>
-          </div>
-
-          {/* Lower Row: Offset Portrait Photo Slot + Personal Introduction Block */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-            {/* Portrait Photo Slot (Centered-Left Offset matching Reference) */}
-            <figure className="relative lg:col-span-4 lg:col-start-3 w-full bg-[#080808] overflow-hidden">
-              <img
-                src={selfPortraitImg}
-                alt="Portrait of the author"
-                referrerPolicy="no-referrer"
-                className="w-full h-auto block"
-              />
-              <div className="absolute inset-x-0 top-0 h-10 sm:h-14 bg-gradient-to-b from-[#080808] via-[#080808]/40 to-transparent pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
-            </figure>
-
-            {/* Personal Introduction Slot */}
-            <div className="lg:col-span-4 lg:col-start-8 lg:pt-10 space-y-6">
-              <p className="text-sm sm:text-base text-white font-normal leading-[1.45]">
-                Midnight kitchen, visual design, photography, everyday archive.
-              </p>
-
-              <div className="space-y-3 text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65]">
-                <p>
-                  平時從事視覺設計與影像創作，習慣透過鏡頭與畫面觀察日常裡的微光與秩序。離開螢幕之後，煮飯成為一天當中最安靜也最真實的切換。
-                </p>
-                <p>
-                  這裡不記錄精準的食譜比例，而是把某個夜晚的心情、當時聽的音樂、走過的地方與端上桌的一道菜，留下成為時間裡的個人索引。
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 02 — Opening Story (Single-Line Monumental Display Headline + Whitespace + Left-Aligned Copy) */}
-        <section className="w-full py-20 sm:py-28">
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-            <h2 className="text-[clamp(1.45rem,5.4vw,4.75rem)] font-semibold tracking-[-0.04em] leading-none text-white sm:whitespace-nowrap">
-              It started with a question
-            </h2>
-
-            <div className="mt-14 sm:mt-24 max-w-sm space-y-2.5 text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65]">
-              <p>最初，只是因為吃過我做的飯的人，都想知道我是怎麼做的。</p>
-              <p>於是，我開始思考紀錄料理的可能。</p>
-              <p>
-                但對我而言，邊料理邊紀錄實在有點假掰；而且，料理不應該也是一件享受當下的事嗎？
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 03 — Three Chapters (Reality, Memories, Continuity) */}
-        <section className="w-full">
-          {/* CHAPTER 01 — Reality */}
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-end">
-              <div className="lg:col-span-5 space-y-8">
-                <div className="space-y-2">
-                  <div className="flex items-baseline gap-3.5">
-                    <span className="font-sans text-xl sm:text-2xl font-medium tracking-tight text-white leading-none select-none">
-                      01.
-                    </span>
-                    <h3 className="text-3xl sm:text-5xl font-semibold tracking-[-0.025em] text-white leading-none">
-                      Reality
-                    </h3>
-                  </div>
-                  <p className="text-sm sm:text-base text-white font-normal leading-snug pl-9 sm:pl-11">
-                    Beyond the virtual, there is the everyday.
-                  </p>
-                </div>
-
-                <p className="text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65] max-w-xs pl-9 sm:pl-11">
-                  料理與享受美食，是我與現實生活保持連結的方式。 切菜、等待水滾、試味道，以及坐下來吃飯，這些看似平凡的行為，讓時間透過身體被感知，也讓生活有了具體的形狀。
-                </p>
-              </div>
-
-              <figure className="relative lg:col-span-6 lg:col-start-7 w-full aspect-video bg-[#080808] overflow-hidden">
+        {/* SECTION 1 — Who cooks?! (H2) + Self Portrait + Self-Introduction + External Links */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-stretch text-left">
+            <div className="md:col-span-4 flex flex-col justify-end">
+              <figure className="w-full max-w-[300px] overflow-hidden bg-[#080808]">
                 <img
-                  src={realityBwKnifeImg}
-                  alt="Black-and-white macro close-up of chef knife blade and sliced scallions"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center grayscale contrast-110"
+                  src={selfPortraitImg}
+                  alt="Portrait of the author"
+                  className="w-full h-auto block"
                 />
-                <div className="absolute inset-x-0 top-0 h-20 sm:h-28 bg-gradient-to-b from-[#080808] via-[#080808]/50 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
               </figure>
             </div>
-          </div>
 
-          {/* CHAPTER 02 — Memories */}
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-              <figure className="relative order-2 lg:order-1 lg:col-span-6 w-full aspect-video bg-[#080808] overflow-hidden">
-                <img
-                  src={memoriesBwWindowImg}
-                  alt="Black-and-white close-up of rain condensation on an empty night window"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center grayscale contrast-110"
-                />
-                <div className="absolute inset-x-0 top-0 h-20 sm:h-28 bg-gradient-to-b from-[#080808] via-[#080808]/50 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
-              </figure>
-
-              <div className="order-1 lg:order-2 lg:col-span-5 lg:col-start-8 lg:pt-10 space-y-8">
-                <div className="space-y-2">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h3 className="text-3xl sm:text-5xl font-semibold tracking-[-0.025em] text-white leading-none">
-                      Memories
-                    </h3>
-                    <span className="font-sans text-xl sm:text-2xl font-medium tracking-tight text-white leading-none select-none">
-                      02.
-                    </span>
-                  </div>
-                  <p className="text-sm sm:text-base text-white font-normal leading-snug">
-                    A dish is a point in time. A place is a way back.
-                  </p>
-                </div>
-
-                <p className="text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65] max-w-xs">
-                  一道料理或許能成為一個線索，讓我重新想起某段時間、某個地方，以及當時的自己，正處於什麼樣的生活狀態。
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CHAPTER 03 — Continuity */}
-          <div className="w-full pt-20 sm:pt-28">
-            <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pb-14 sm:pb-20">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end">
-                <div className="lg:col-span-6 space-y-2">
-                  <span className="block font-sans text-xl sm:text-2xl font-medium tracking-tight text-white leading-none select-none">
-                    03.
-                  </span>
-                  <h3 className="text-3xl sm:text-5xl font-semibold tracking-[-0.025em] text-white leading-none pt-1">
-                    Continuity
-                  </h3>
-                  <p className="text-sm sm:text-base text-white font-normal leading-snug pt-0.5">
-                    An unfinished map of a life.
-                  </p>
-                </div>
-
-                <div className="lg:col-span-4 lg:col-start-8 space-y-2 text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65]">
-                  <p>這是一項持續進行的個人紀錄。</p>
+            <div className="md:col-span-7 md:col-start-6 flex flex-col justify-between space-y-10">
+              <div className="space-y-4">
+                <h2 className={TYPE_H2}>Who cooks!</h2>
+                <div className={`${TYPE_NORMAL} space-y-5`}>
+                  <p>目前以 XR 設計研究謀生，現在狂寫論文中 ⋯⋯</p>
                   <p>
-                    數位媒介讓逐漸模糊的感官記憶，得以轉化為可觀看、可回望的軌跡。 盼未來某個時空裡，再次看見這些紀錄的我們，能夠會心一笑。
+                    比起每天螢幕上改 Code，戴頭盔當開發怪人，煮飯實在是太好玩了 ＞＜
+                    <br />
+                    甚至在思考還是畢業後去賣茶葉蛋？做個自己的吃吃品牌～
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Full-Bleed Edge-to-Edge Macro Photograph */}
-            <figure className="relative w-full aspect-video overflow-hidden bg-[#080808]">
-              <img
-                src={continuityBwSimmerImg}
-                alt="Full-bleed monochrome macro photograph of simmering dark broth ripples"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover object-center grayscale contrast-115"
-              />
-              <div className="absolute inset-x-0 top-0 h-24 sm:h-36 bg-gradient-to-b from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 h-28 sm:h-40 bg-gradient-to-t from-[#080808] via-[#080808]/60 to-transparent pointer-events-none" />
-            </figure>
+              <nav
+                aria-label="External links"
+                className={`flex flex-wrap items-center gap-x-6 gap-y-2.5 ${TYPE_H3}`}
+              >
+                {SOCIAL_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-1.5 text-white hover:opacity-70 transition-opacity"
+                  >
+                    <span>{link.label}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-white shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+                  </a>
+                ))}
+              </nav>
+            </div>
           </div>
         </section>
 
-        {/* SECTION 04 — Closing: Generous Whitespace & Clean Typographic Statement */}
-        <footer className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-28 sm:py-40">
-          <p className="text-3xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.03em] leading-none text-white">
-            Still taking shape... ... ...
+        {/* SECTION 2 (16:9, directly follows Section 1) — Why I cook (H1) & On cooking (H2) + H2-Sized 0-100% White Circles (20px gap) */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-4 md:pb-6 md:aspect-video flex flex-col justify-start text-left">
+          <div className="w-full space-y-2">
+            <h2 className={TYPE_H1}>Why I cook.</h2>
+            <p className={`${TYPE_H2} sm:whitespace-nowrap`}>
+              On cooking, and the act of remembering.
+            </p>
+          </div>
+
+          {/* Left-aligned vertical column of 13 H2-sized circles (1 added on top, 3 on bottom) with 20px spacing */}
+          <div
+            aria-hidden="true"
+            className="flex flex-col items-start gap-[20px] pt-6 pb-4 sm:pt-8 sm:pb-6 select-none"
+          >
+            {VERTICAL_GUIDE_OPACITIES.map((opacity, idx) => (
+              <span
+                key={idx}
+                className="block w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white shrink-0"
+                style={{ opacity }}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* SECTION 3 (16:9) — Top: It started with a question ?; Bottom: Flush-Left Click-to-Reveal White Box, 1/3 16:9 gap before Section 4 */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-16 md:pt-6 md:pb-0 md:mb-[18.75%] md:aspect-video flex flex-col justify-between text-left">
+          <h2 className={`${TYPE_H1} sm:whitespace-nowrap`}>
+            It started with a question
+            <span
+              aria-hidden="true"
+              className="inline-block ml-1 sm:ml-1.5 text-[84px] sm:text-[140px] lg:text-[180px] font-semibold leading-[0.75] text-white align-baseline"
+            >
+              ?
+            </span>
+          </h2>
+
+          <div className="mt-16 md:mt-0 text-left">
+            <button
+              type="button"
+              onClick={() => setRevealedOrigin((v) => !v)}
+              aria-expanded={revealedOrigin}
+              className={`inline-block max-w-full p-0 text-left cursor-pointer focus:outline-none transition-colors duration-300 ${
+                revealedOrigin
+                  ? 'bg-transparent'
+                  : 'bg-white hover:bg-white/90'
+              }`}
+            >
+              <span
+                className={`${TYPE_NORMAL_BASE} block text-left transition-opacity duration-300 ${
+                  revealedOrigin
+                    ? 'text-[#9ca3af] opacity-100'
+                    : 'text-[#9ca3af] opacity-0 select-none'
+                }`}
+              >
+                <span className="lg:whitespace-nowrap">
+                  最初，只是因為吃過我做的飯的人，「都想知道我是怎麼做的」
+                </span>
+                <br />
+                <span className="lg:whitespace-nowrap">於是，我開始思考「紀錄料理」的可能。</span>
+                <br />
+                <span className="lg:whitespace-nowrap">
+                  但對我而言，邊料理邊紀錄實在有點假掰；而且，料理不應該也是一件享受當下的事嗎
+                </span>
+              </span>
+            </button>
+          </div>
+        </section>
+
+        {/* SECTION 4 — Left-Aligned Image + Lockup (H1 = H2 + H3), Right Click-to-Reveal Comma Quotes */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-12 sm:pt-6 sm:pb-16 space-y-20 sm:space-y-28">
+          {CHAPTERS.map((chapter) => {
+            const isOpen = !!openChapters[chapter.num];
+            return (
+              <div
+                key={chapter.num}
+                className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start text-left"
+              >
+                {/* Left: Uncropped Full-Color Photo + Lockup (H1 = H2 + H3) */}
+                <div className="md:col-span-6 space-y-4 text-left">
+                  <figure className="w-full">
+                    <img
+                      src={chapter.image}
+                      alt={chapter.alt}
+                      className="w-full h-auto block"
+                    />
+                  </figure>
+
+                  <div className="flex items-center gap-3.5 text-left">
+                    <span className={`${TYPE_H1} select-none shrink-0`}>
+                      {chapter.num}
+                    </span>
+                    <div className="flex flex-col justify-center min-w-0">
+                      <h3 className={TYPE_H2}>{chapter.title}</h3>
+                      <p className={`${TYPE_H3} mt-0.5`}>{chapter.subtitle}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Clickable Comma-Shaped Quotes Revealing Continuous Prose with Symmetric Top/Bottom Spacing */}
+                <div className="md:col-span-6 flex flex-col items-start justify-start text-left md:pt-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleChapter(chapter.num)}
+                    aria-expanded={isOpen}
+                    aria-label={`${chapter.title} quote`}
+                    className="group text-left cursor-pointer focus:outline-none w-full"
+                  >
+                    {!isOpen ? (
+                      <div className="inline-flex items-center gap-4 select-none group-hover:opacity-70 transition-opacity">
+                        <CommaQuoteMark variant="open" />
+                        <CommaQuoteMark variant="close" />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-start text-left gap-6">
+                        <CommaQuoteMark
+                          variant="open"
+                          className="h-7 sm:h-9 w-auto text-white shrink-0 group-hover:opacity-70 transition-opacity"
+                        />
+                        <p className={`${TYPE_NORMAL} whitespace-pre-line`}>{chapter.description}</p>
+                        <CommaQuoteMark
+                          variant="close"
+                          className="h-7 sm:h-9 w-auto text-white shrink-0 group-hover:opacity-70 transition-opacity"
+                        />
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+
+        {/* SECTION 5 (directly follows Section 4) — Closing Photograph Matching max-w-6xl Container Width (Responsive, Original Ratio & Color, Top-Half Fade from Black) */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12">
+          <figure className="relative w-full overflow-hidden">
+            <img
+              src={bottomStoveImg}
+              alt="Steaming pots of clams and broth simmering on the stove"
+              className="w-full h-auto block"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#080808] via-[#080808]/55 to-transparent"
+            />
+          </figure>
+        </section>
+
+        {/* SECTION 6 (16:9) — Still taking shape ... ... ... (Bottom-Anchored, Looping Dots) */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-12 md:py-0 md:pb-12 md:aspect-video flex flex-col justify-end items-start">
+          <p className={`${TYPE_H1} text-left`}>
+            Still taking shape{' '}
+            <span className="inline-flex items-baseline gap-2 sm:gap-3" aria-hidden="true">
+              <span className="animate-dot-loop" style={{ animationDelay: '0s' }}>
+                ...
+              </span>
+              <span className="animate-dot-loop" style={{ animationDelay: '0.45s' }}>
+                ...
+              </span>
+              <span className="animate-dot-loop" style={{ animationDelay: '0.9s' }}>
+                ...
+              </span>
+            </span>
           </p>
-        </footer>
+        </section>
       </article>
     </div>
   );

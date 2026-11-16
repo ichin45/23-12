@@ -101,7 +101,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         // Optimize image resolution to ensure smooth performance and safe localStorage persistence
         const img = new Image();
         img.onload = () => {
-          const maxDim = 1200;
+          const maxDim = 960;
           let { width, height } = img;
           if (width > maxDim || height > maxDim) {
             if (width > height) {
@@ -118,7 +118,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
             setImage(optimizedDataUrl);
           } else {
             setImage(rawData);

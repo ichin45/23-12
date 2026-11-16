@@ -106,9 +106,14 @@ export async function persistDishes(dishesToSave: DateVibeItem[]): Promise<void>
   // 1. Save to IndexedDB (safe for high-resolution images & unlimited entries)
   try {
     const db = await openDB();
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    store.put(sanitized, RECORD_KEY);
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      store.put(sanitized, RECORD_KEY);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
   } catch (err) {
     console.warn('Could not save to IndexedDB:', err);
   }
@@ -117,6 +122,11 @@ export async function persistDishes(dishesToSave: DateVibeItem[]): Promise<void>
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sanitized));
   } catch (err) {
-    console.warn('localStorage quota reached, saved safely in IndexedDB:', err);
+    console.warn('localStorage quota reached, removing stale cache and relying on IndexedDB:', err);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }
 }
