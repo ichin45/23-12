@@ -219,7 +219,7 @@ export const DishView: React.FC<DishViewProps> = ({
                   className={`absolute inset-0 w-full h-full rounded-2xl flex items-center justify-center transition-colors ${
                     showEmptyPlateFront
                       ? 'bg-transparent border-0 shadow-none'
-                      : 'overflow-hidden bg-[#141414] border-2 border-[#282828] group-hover:border-white/60 shadow-2xl'
+                      : 'overflow-hidden bg-[#141414] border border-[#282828] group-hover:border-white/50 shadow-2xl'
                   }`}
                   style={{
                     backfaceVisibility: 'hidden',
@@ -254,7 +254,7 @@ export const DishView: React.FC<DishViewProps> = ({
                       WebkitBackfaceVisibility: 'hidden',
                       transform: 'rotateY(180deg)',
                       backgroundColor: isCooked ? moodColor : '#121212',
-                      border: isCooked ? 'none' : `4px solid ${moodColor}`,
+                      border: isCooked ? 'none' : `3px solid ${moodColor}`,
                       color: isSosoCooked ? '#111111' : '#ffffff',
                     }}
                   >

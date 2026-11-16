@@ -69,7 +69,7 @@ const CommaQuoteMark: React.FC<{ variant: 'open' | 'close'; className?: string }
   </svg>
 );
 
-const VERTICAL_GUIDE_OPACITIES = Array.from({ length: 13 }, (_, i) => i / 12);
+const VERTICAL_GUIDE_OPACITIES = Array.from({ length: 10 }, (_, i) => i / 9);
 
 export const AboutView: React.FC = () => {
   const [colonVisible, setColonVisible] = useState(true);
@@ -117,13 +117,13 @@ export const AboutView: React.FC = () => {
 
       {/* Editorial Canvas */}
       <article className="w-full pt-6 sm:pt-8">
-        {/* PRE-SECTION 1 — Opening Photograph Matching max-w-6xl Container Width (Responsive, Original Ratio & Color, Bottom-Half Fade to Black) */}
+        {/* PRE-SECTION 1 — Opening Photograph Matching max-w-6xl Container Width (Portrait 10:11 Crop, Sharp Corners, Bottom-Half Fade to Black) */}
         <section className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-          <figure className="relative w-full overflow-hidden">
+          <figure className="relative w-full aspect-[10/11] overflow-hidden">
             <img
               src={topKitchenImg}
               alt="Sunlit kitchen counter with fresh tomatoes, chopped onions, knife, and green skillet"
-              className="w-full h-auto block"
+              className="w-full h-full object-cover object-top block"
             />
             <div
               aria-hidden="true"
@@ -132,7 +132,7 @@ export const AboutView: React.FC = () => {
           </figure>
         </section>
 
-        {/* SECTION 1 — Who cooks?! (H2) + Self Portrait + Self-Introduction + External Links */}
+        {/* SECTION 1 — Who cooks! (H2) + Self Portrait + Self-Introduction + External Links */}
         <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-stretch text-left">
             <div className="md:col-span-4 flex flex-col justify-end">
@@ -179,8 +179,8 @@ export const AboutView: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 2 (16:9, directly follows Section 1) — Why I cook (H1) & On cooking (H2) + H2-Sized 0-100% White Circles (20px gap) */}
-        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-4 md:pb-6 md:aspect-video flex flex-col justify-start text-left">
+        {/* SECTION 2 — Shifted downward with 10 H2-sized 0-100% white circles (20px gap) leading directly into Section 3 */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-72 sm:pt-96 md:pt-[420px] pb-5 flex flex-col justify-start text-left">
           <div className="w-full space-y-2">
             <h2 className={TYPE_H1}>Why I cook.</h2>
             <p className={`${TYPE_H2} sm:whitespace-nowrap`}>
@@ -188,10 +188,10 @@ export const AboutView: React.FC = () => {
             </p>
           </div>
 
-          {/* Left-aligned vertical column of 13 H2-sized circles (1 added on top, 3 on bottom) with 20px spacing */}
+          {/* Left-aligned vertical column of 10 H2-sized circles with 20px spacing */}
           <div
             aria-hidden="true"
-            className="flex flex-col items-start gap-[20px] pt-6 pb-4 sm:pt-8 sm:pb-6 select-none"
+            className="flex flex-col items-start gap-[20px] pt-6 sm:pt-8 select-none"
           >
             {VERTICAL_GUIDE_OPACITIES.map((opacity, idx) => (
               <span
@@ -203,47 +203,46 @@ export const AboutView: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 3 (16:9) — Top: It started with a question ?; Bottom: Flush-Left Click-to-Reveal White Box, 1/3 16:9 gap before Section 4 */}
-        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-16 md:pt-6 md:pb-0 md:mb-[18.75%] md:aspect-video flex flex-col justify-between text-left">
-          <h2 className={`${TYPE_H1} sm:whitespace-nowrap`}>
-            It started with a question
-            <span
-              aria-hidden="true"
-              className="inline-block ml-1 sm:ml-1.5 text-[84px] sm:text-[140px] lg:text-[180px] font-semibold leading-[0.75] text-white align-baseline"
-            >
-              ?
-            </span>
-          </h2>
-
-          <div className="mt-16 md:mt-0 text-left">
-            <button
-              type="button"
-              onClick={() => setRevealedOrigin((v) => !v)}
-              aria-expanded={revealedOrigin}
-              className={`inline-block max-w-full p-0 text-left cursor-pointer focus:outline-none transition-colors duration-300 ${
-                revealedOrigin
-                  ? 'bg-transparent'
-                  : 'bg-white hover:bg-white/90'
-              }`}
-            >
+        {/* SECTION 3 — Connects immediately from the last circle into It started with a question ? + centered prose breathing room */}
+        <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-0 pb-36 sm:pb-48 md:pb-56 flex flex-col justify-start text-left">
+          <div className="w-full space-y-6 sm:space-y-8">
+            <h2 className={`${TYPE_H1} sm:whitespace-nowrap`}>
+              It started with a question
               <span
-                className={`${TYPE_NORMAL_BASE} block text-left transition-opacity duration-300 ${
+                aria-hidden="true"
+                className="inline-block ml-1 sm:ml-1.5 text-[84px] sm:text-[140px] lg:text-[180px] font-semibold leading-[0.75] text-white align-baseline"
+              >
+                ?
+              </span>
+            </h2>
+
+            <div className="text-left">
+              <button
+                type="button"
+                onClick={() => setRevealedOrigin((v) => !v)}
+                aria-expanded={revealedOrigin}
+                className={`inline-block max-w-full p-0 text-left cursor-pointer focus:outline-none transition-colors duration-300 ${
                   revealedOrigin
-                    ? 'text-[#9ca3af] opacity-100'
-                    : 'text-[#9ca3af] opacity-0 select-none'
+                    ? 'bg-transparent'
+                    : 'bg-white hover:bg-white/90'
                 }`}
               >
-                <span className="lg:whitespace-nowrap">
-                  最初，只是因為吃過我做的飯的人，「都想知道我是怎麼做的」
+                <span
+                  className={`${TYPE_NORMAL_BASE} block text-left transition-opacity duration-300 ${
+                    revealedOrigin
+                      ? 'text-[#9ca3af] opacity-100'
+                      : 'text-[#9ca3af] opacity-0 select-none'
+                  }`}
+                >
+                  <span className="lg:whitespace-nowrap">
+                    最初，只是因為吃過我做的飯的人，「都想知道我是怎麼做的」。於是，我開始思考「紀錄料理」的可能？</span>
+                  <br />
+                  <span className="lg:whitespace-nowrap">
+                    但對我而言，邊料理邊紀錄實在有點假掰；而且，料理不應該也是一件享受當下的事嗎？
+                  </span>
                 </span>
-                <br />
-                <span className="lg:whitespace-nowrap">於是，我開始思考「紀錄料理」的可能。</span>
-                <br />
-                <span className="lg:whitespace-nowrap">
-                  但對我而言，邊料理邊紀錄實在有點假掰；而且，料理不應該也是一件享受當下的事嗎
-                </span>
-              </span>
-            </button>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -258,7 +257,7 @@ export const AboutView: React.FC = () => {
               >
                 {/* Left: Uncropped Full-Color Photo + Lockup (H1 = H2 + H3) */}
                 <div className="md:col-span-6 space-y-4 text-left">
-                  <figure className="w-full">
+                  <figure className="w-full overflow-hidden">
                     <img
                       src={chapter.image}
                       alt={chapter.alt}
@@ -311,13 +310,13 @@ export const AboutView: React.FC = () => {
           })}
         </section>
 
-        {/* SECTION 5 (directly follows Section 4) — Closing Photograph Matching max-w-6xl Container Width (Responsive, Original Ratio & Color, Top-Half Fade from Black) */}
+        {/* SECTION 5 (directly follows Section 4) — Closing Photograph Matching max-w-6xl Container Width (Portrait 10:11 Crop, Sharp Corners, Top-Half Fade from Black) */}
         <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12">
-          <figure className="relative w-full overflow-hidden">
+          <figure className="relative w-full aspect-[10/11] overflow-hidden">
             <img
               src={bottomStoveImg}
               alt="Steaming pots of clams and broth simmering on the stove"
-              className="w-full h-auto block"
+              className="w-full h-full object-cover object-top block"
             />
             <div
               aria-hidden="true"

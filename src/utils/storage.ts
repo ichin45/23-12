@@ -1,6 +1,5 @@
 import { DateVibeItem } from '../types';
 import { INITIAL_DISHES } from '../data/seedData';
-import dishBarcelonaStewImg from '../assets/images/dish_barcelona_stew.png';
 
 const LOCAL_STORAGE_KEY = '23_12_midnight_pot_dishes';
 const DB_NAME = '23_12_MidnightPot_DB';
@@ -34,30 +33,15 @@ function openDB(): Promise<IDBDatabase> {
 export function sanitizeDishes(raw: DateVibeItem[]): DateVibeItem[] {
   if (!Array.isArray(raw)) return INITIAL_DISHES;
 
-  return raw.map((d: DateVibeItem) => {
-    if (d.id === 'dish-8') {
-      const resolvedImage =
-        d.image && !d.image.startsWith('/assets/aistudio/') ? d.image : dishBarcelonaStewImg;
-      return {
-        ...d,
-        cooked: true,
-        image: resolvedImage,
-        city: {
-          ...d.city,
-          name: 'Barcelona',
-          country: 'Spain',
-          location: d.city?.location || 'Barcelona, Spain',
-        },
-      };
-    }
-    return {
+  return raw
+    .filter((d: DateVibeItem) => d && d.id !== 'dish-8')
+    .map((d: DateVibeItem) => ({
       ...d,
       image:
         d.image && !d.image.includes('images.unsplash.com') && !d.image.startsWith('/assets/aistudio/')
           ? d.image
           : '',
-    };
-  });
+    }));
 }
 
 // Synchronously get initial dishes on component mount from localStorage, fallback to INITIAL_DISHES
