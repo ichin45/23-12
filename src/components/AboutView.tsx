@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import heroBwSteamImg from '../assets/images/about_hero_bw_steam_1794787869248.jpg';
-import introBwPotImg from '../assets/images/about_intro_bw_pot_1794787869677.jpg';
+import selfPortraitImg from '../assets/images/about_self_portrait.jpeg';
 import realityBwKnifeImg from '../assets/images/about_reality_bw_knife_1794787871008.jpg';
 import memoriesBwWindowImg from '../assets/images/about_memories_bw_window_1794787870868.jpg';
 import continuityBwSimmerImg from '../assets/images/about_continuity_bw_simmer_1794787871181.jpg';
@@ -109,13 +109,13 @@ export const AboutView: React.FC = () => {
             {/* Portrait Photo Slot (Centered-Left Offset matching Reference) */}
             <figure className="relative lg:col-span-4 lg:col-start-3 w-full bg-[#080808] overflow-hidden">
               <img
-                src={introBwPotImg}
-                alt="Personal monochrome lifestyle portrait slot"
+                src={selfPortraitImg}
+                alt="Portrait of the author"
                 referrerPolicy="no-referrer"
-                className="w-full h-auto block grayscale contrast-110"
+                className="w-full h-auto block"
               />
-              <div className="absolute inset-x-0 top-0 h-20 sm:h-24 bg-gradient-to-b from-[#080808] via-[#080808]/45 to-transparent pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 h-20 sm:h-28 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 top-0 h-10 sm:h-14 bg-gradient-to-b from-[#080808] via-[#080808]/40 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-16 sm:h-24 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
             </figure>
 
             {/* Personal Introduction Slot */}
@@ -136,11 +136,11 @@ export const AboutView: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 02 — Opening Story (Monumental Wide Display Headline + Whitespace + Left-Aligned Copy) */}
+        {/* SECTION 02 — Opening Story (Single-Line Monumental Display Headline + Whitespace + Left-Aligned Copy) */}
         <section className="w-full py-20 sm:py-28">
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
-            <h2 className="text-[clamp(2.5rem,7.2vw,6.25rem)] font-semibold tracking-[-0.04em] leading-[0.96] text-white text-balance">
-              It started with a simple question...
+            <h2 className="text-[clamp(1.45rem,5.4vw,4.75rem)] font-semibold tracking-[-0.04em] leading-none text-white sm:whitespace-nowrap">
+              It started with a question
             </h2>
 
             <div className="mt-14 sm:mt-24 max-w-sm space-y-2.5 text-[11px] sm:text-xs text-[#9ca3af] leading-[1.65]">
@@ -178,12 +178,12 @@ export const AboutView: React.FC = () => {
                 </p>
               </div>
 
-              <figure className="relative lg:col-span-6 lg:col-start-7 w-full bg-[#080808] overflow-hidden">
+              <figure className="relative lg:col-span-6 lg:col-start-7 w-full aspect-video bg-[#080808] overflow-hidden">
                 <img
                   src={realityBwKnifeImg}
                   alt="Black-and-white macro close-up of chef knife blade and sliced scallions"
                   referrerPolicy="no-referrer"
-                  className="w-full h-auto block grayscale contrast-110"
+                  className="w-full h-full object-cover object-center grayscale contrast-110"
                 />
                 <div className="absolute inset-x-0 top-0 h-20 sm:h-28 bg-gradient-to-b from-[#080808] via-[#080808]/50 to-transparent pointer-events-none" />
                 <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />
@@ -194,12 +194,12 @@ export const AboutView: React.FC = () => {
           {/* CHAPTER 02 — Memories */}
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-              <figure className="relative order-2 lg:order-1 lg:col-span-4 lg:col-start-3 w-full bg-[#080808] overflow-hidden">
+              <figure className="relative order-2 lg:order-1 lg:col-span-6 w-full aspect-video bg-[#080808] overflow-hidden">
                 <img
                   src={memoriesBwWindowImg}
                   alt="Black-and-white close-up of rain condensation on an empty night window"
                   referrerPolicy="no-referrer"
-                  className="w-full h-auto block grayscale contrast-110"
+                  className="w-full h-full object-cover object-center grayscale contrast-110"
                 />
                 <div className="absolute inset-x-0 top-0 h-20 sm:h-28 bg-gradient-to-b from-[#080808] via-[#080808]/50 to-transparent pointer-events-none" />
                 <div className="absolute inset-x-0 bottom-0 h-24 sm:h-32 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-transparent pointer-events-none" />

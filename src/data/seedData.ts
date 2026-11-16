@@ -1,5 +1,6 @@
 import { DateVibeItem } from '../types';
 import { getDishNumberByDate } from '../utils/dishNumber';
+import dishBarcelonaStewImg from '../assets/images/dish_barcelona_stew.png';
 
 export const INITIAL_DISHES: DateVibeItem[] = [
   {
@@ -191,7 +192,7 @@ export const INITIAL_DISHES: DateVibeItem[] = [
     },
     note: 'In the quiet Spanish kitchen after sunset. Paprika, savory meatballs, melting cheese, and peppers simmering in warm broth.',
     quote: 'Only the boiling water listens to thoughts left unsaid.',
-    image: '/assets/aistudio/___2026-11-02___4.51.20_dfc64ae0.png',
+    image: dishBarcelonaStewImg,
     igUrl: 'https://www.instagram.com',
   },
   {

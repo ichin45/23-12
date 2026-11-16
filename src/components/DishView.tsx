@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { DateVibeItem, MoodType } from '../types';
 
+import EMPTY_PLATE_IMAGE from '../assets/images/dish_empty_plate.png';
 import {
   playInPageAudio,
   toggleInPageAudio,
@@ -16,8 +17,6 @@ interface DishViewProps {
   onNavigateToYear: (dateStr?: string) => void;
   onNavigateToPlace: (cityName?: string) => void;
 }
-
-const EMPTY_PLATE_IMAGE = '/assets/aistudio/Dish_edd7551b.png';
 
 export const DishView: React.FC<DishViewProps> = ({
   dishes,

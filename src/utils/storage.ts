@@ -1,5 +1,6 @@
 import { DateVibeItem } from '../types';
 import { INITIAL_DISHES } from '../data/seedData';
+import dishBarcelonaStewImg from '../assets/images/dish_barcelona_stew.png';
 
 const LOCAL_STORAGE_KEY = '23_12_midnight_pot_dishes';
 const DB_NAME = '23_12_MidnightPot_DB';
@@ -35,10 +36,12 @@ export function sanitizeDishes(raw: DateVibeItem[]): DateVibeItem[] {
 
   return raw.map((d: DateVibeItem) => {
     if (d.id === 'dish-8') {
+      const resolvedImage =
+        d.image && !d.image.startsWith('/assets/aistudio/') ? d.image : dishBarcelonaStewImg;
       return {
         ...d,
         cooked: true,
-        image: d.image || '/assets/aistudio/___2026-11-02___4.51.20_dfc64ae0.png',
+        image: resolvedImage,
         city: {
           ...d.city,
           name: 'Barcelona',
@@ -49,7 +52,10 @@ export function sanitizeDishes(raw: DateVibeItem[]): DateVibeItem[] {
     }
     return {
       ...d,
-      image: d.image && !d.image.includes('images.unsplash.com') ? d.image : '',
+      image:
+        d.image && !d.image.includes('images.unsplash.com') && !d.image.startsWith('/assets/aistudio/')
+          ? d.image
+          : '',
     };
   });
 }
