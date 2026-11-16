@@ -1,0 +1,6 @@
+{
+  "name": "23:12 Photo Comparer",
+  "description": "Interactive photo comparison gallery with adjustable split sliders in Instagram 4:5 portrait ratio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

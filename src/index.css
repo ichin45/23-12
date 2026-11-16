@@ -1,0 +1,277 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  :root {
+    --bg-dark: #0a0a0a;
+    --surface-dark: #121212;
+    --border-dark: #262626;
+    --text-primary: #ffffff;
+    --text-muted: #888888;
+    --color-happy: #f97316; /* 橘色 */
+    --color-soso: #f5f5f5; /* 白色 */
+    --color-sad: #818cf8; /* 藍紫色 */
+  }
+
+  html {
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Yu Gothic', 'YuGothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #080808;
+    color: #f5f5f5;
+    min-height: 100vh;
+    letter-spacing: -0.01em;
+  }
+}
+
+.font-sans-clean {
+  font-family: 'Plus Jakarta Sans', 'Yu Gothic', 'YuGothic', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Subtle map texture */
+.bg-carto-dark {
+  background-color: #09090b;
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px, 64px 64px, 64px 64px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-6px) translateX(4px);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.08) translateY(-3px);
+  }
+}
+
+/* Mutual gravitational attraction between galaxy icons */
+@keyframes gravityPull1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  25% {
+    transform: translate(3px, 2px) scale(1.04);
+  }
+  50% {
+    transform: translate(5px, 3px) scale(1.02);
+  }
+  75% {
+    transform: translate(2px, 1px) scale(0.98);
+  }
+}
+
+@keyframes gravityPull2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  25% {
+    transform: translate(-3px, -2px) scale(1.04);
+  }
+  50% {
+    transform: translate(-5px, -3px) scale(1.02);
+  }
+  75% {
+    transform: translate(-2px, -1px) scale(0.98);
+  }
+}
+
+@keyframes gravityPull3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  30% {
+    transform: translate(2px, -3px) scale(1.03);
+  }
+  60% {
+    transform: translate(4px, -4px) scale(1.01);
+  }
+  80% {
+    transform: translate(1px, -1px) scale(0.99);
+  }
+}
+
+@keyframes gravityPull4 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  30% {
+    transform: translate(-2px, 3px) scale(1.03);
+  }
+  60% {
+    transform: translate(-4px, 4px) scale(1.01);
+  }
+  80% {
+    transform: translate(-1px, 1px) scale(0.99);
+  }
+}
+
+.animate-float {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 3s ease-in-out infinite;
+}
+
+.animate-gravity-1 {
+  animation: gravityPull1 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.animate-gravity-2 {
+  animation: gravityPull2 4.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -0.7s;
+}
+
+.animate-gravity-3 {
+  animation: gravityPull3 3.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -1.4s;
+}
+
+.animate-gravity-4 {
+  animation: gravityPull4 4.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -2.1s;
+}
+
+/* Micro-animations representing status states */
+@keyframes busyPulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.08) rotate(-4deg);
+  }
+  50% {
+    transform: scale(0.95) rotate(3deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(-2deg);
+  }
+}
+
+.animate-busy-pulse {
+  animation: busyPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes moderateBreathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+.animate-moderate-breathe {
+  animation: moderateBreathe 3.4s ease-in-out infinite;
+}
+
+@keyframes freeDrift {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-3.5px) scale(1.08);
+  }
+}
+
+.animate-free-drift {
+  animation: freeDrift 2.8s ease-in-out infinite;
+}
+
+/* Explosive shockwave ripple */
+@keyframes burstShockwave {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+    stroke-width: 2px;
+  }
+  60% {
+    opacity: 0.35;
+    stroke-width: 1.2px;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+    stroke-width: 0.5px;
+  }
+}
+
+.animate-burst-wave {
+  animation: burstShockwave 2s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+  transform-origin: center center;
+}
+
+/* Right-to-Left Continuous Marquee */
+@keyframes marqueeRTL {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: marqueeRTL 50s linear infinite;
+}
+
+.animate-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
+/* 1-second breathing lamp animation for colon in About 23:12... */
+@keyframes colonBreathe {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+  }
+  50% {
+    opacity: 0.12;
+    filter: drop-shadow(0 0 0px transparent);
+  }
+}
+
+.animate-colon-breathe {
+  animation: colonBreathe 1s ease-in-out infinite;
+  display: inline-block;
+}
+
+
