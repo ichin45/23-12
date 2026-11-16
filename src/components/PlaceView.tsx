@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Compass,
   ArrowUpRight,
   BookOpen,
   UtensilsCrossed,
   Instagram,
+  X,
 } from 'lucide-react';
 import { SolidPlacePinIcon } from './Icons';
 import { DateVibeItem, MoodType } from '../types';
@@ -197,14 +199,14 @@ const KNOWN_CITY_TEMPLATES: Record<string, CityTemplate> = {
 };
 
 const KNOWN_SPOT_COORDS: Record<string, { x: number; y: number }> = {
-  iaa: { x: 26, y: 34 },
-  'nycu iaa': { x: 26, y: 34 },
-  'iaa lab': { x: 26, y: 34 },
-  'iaa studio': { x: 26, y: 34 },
-  'nycu corner': { x: 68, y: 30 },
-  'nycu lab dorm': { x: 38, y: 68 },
-  'lab dorm': { x: 38, y: 68 },
-  nycu: { x: 72, y: 36 },
+  iaa: { x: 30, y: 36 },
+  'nycu iaa': { x: 30, y: 36 },
+  'iaa lab': { x: 30, y: 36 },
+  'iaa studio': { x: 30, y: 36 },
+  'nycu corner': { x: 66, y: 32 },
+  'nycu lab dorm': { x: 40, y: 66 },
+  'lab dorm': { x: 40, y: 66 },
+  nycu: { x: 70, y: 38 },
   'zhongshan studio': { x: 55, y: 64 },
   'daan studio': { x: 44, y: 38 },
   'shinjuku loft': { x: 58, y: 42 },
@@ -590,7 +592,7 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
       if (!coords) {
         const angle =
           (index / Math.max(entries.length, 1)) * 2 * Math.PI - Math.PI / 4;
-        const radius = 24;
+        const radius = 18;
         coords = {
           x: Math.round(50 + radius * Math.cos(angle)),
           y: Math.round(50 + radius * Math.sin(angle)),
@@ -626,12 +628,86 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
   const [previewDishIndex, setPreviewDishIndex] = useState<number>(0);
   const touchStartXRef = useRef<number>(0);
 
-  // Map Pan & Zoom states
+  // Map Pan & Zoom states + Left Canvas measured dimensions
   const [mapZoom, setMapZoom] = useState<number>(1);
   const [mapPan, setMapPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isMapDragging, setIsMapDragging] = useState<boolean>(false);
   const [mapDragStart, setMapDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const mapDragDistanceRef = useRef<number>(0);
+  const galaxyCanvasRef = useRef<HTMLDivElement | null>(null);
+  const [canvasBounds, setCanvasBounds] = useState<{ width: number; height: number }>({
+    width: 540,
+    height: 520,
+  });
+
+  useEffect(() => {
+    if (placeTab !== 'dish') return;
+    const el = galaxyCanvasRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setCanvasBounds({ width: rect.width, height: rect.height });
+      }
+    };
+    updateSize();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0) {
+            setCanvasBounds({ width, height });
+          }
+        }
+      });
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [placeTab]);
+
+  // Fit all galaxy circles and their curved labels strictly inside left panel bounds on initial entry
+  const positionedLocationNodes = useMemo(() => {
+    const { width, height } = canvasBounds;
+    const minDim = Math.min(width, height);
+    const sizeScale = Math.max(0.55, Math.min(1, minDim / 500));
+
+    return locationNodes.map((node) => {
+      const rawDiameter = Math.max(114, Math.min(198, 94 + node.count * 16));
+      const maxFitDiameter = Math.max(68, Math.floor(Math.min(width - 56, height - 64)));
+      const outerGalaxyDiameter = Math.min(Math.round(rawDiameter * sizeScale), maxFitDiameter);
+      const r = outerGalaxyDiameter / 2;
+
+      const padLeft = r + 32;
+      const padRight = r + 14;
+      const padTop = r + 36;
+      const padBottom = r + 16;
+
+      const rawPx = (node.x / 100) * width;
+      const rawPy = (node.y / 100) * height;
+
+      const minX = padLeft;
+      const maxX = width - padRight;
+      const px = minX <= maxX ? Math.max(minX, Math.min(maxX, rawPx)) : width / 2;
+
+      const extraBottomForZoomControls = px > width - 148 - r ? 44 : 0;
+      const minY = padTop;
+      const maxY = height - Math.max(padBottom, r + 16 + extraBottomForZoomControls);
+      const py = minY <= maxY ? Math.max(minY, Math.min(maxY, rawPy)) : (minY + maxY) / 2;
+
+      return {
+        ...node,
+        px,
+        py,
+        outerGalaxyDiameter,
+        sizeScale,
+      };
+    });
+  }, [locationNodes, canvasBounds]);
 
   // Parse status key into formatted label e.g., 'Happy・Free'
   const getVariantLabel = (vKey: string | null) => {
@@ -739,6 +815,46 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
     return [...items, ...items];
   }, [marqueeDishes]);
 
+  const checkIsMobilePortrait = () => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.innerWidth < 768 &&
+      window.matchMedia('(orientation: portrait)').matches
+    );
+  };
+
+  const [isMobilePortrait, setIsMobilePortrait] = useState<boolean>(checkIsMobilePortrait);
+
+  useEffect(() => {
+    const updateOrientation = () => setIsMobilePortrait(checkIsMobilePortrait());
+    updateOrientation();
+    const orientationMq = window.matchMedia('(orientation: portrait)');
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
+    orientationMq.addEventListener('change', updateOrientation);
+    return () => {
+      window.removeEventListener('resize', updateOrientation);
+      window.removeEventListener('orientationchange', updateOrientation);
+      orientationMq.removeEventListener('change', updateOrientation);
+    };
+  }, []);
+
+  const handleCloseGalaxySheet = () => {
+    setSelectedLocationId(null);
+    setSelectedVariantKey(null);
+  };
+
+  useEffect(() => {
+    if (!isMobilePortrait || !selectedNode) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseGalaxySheet();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isMobilePortrait, selectedNode]);
+
 
 
 
@@ -820,7 +936,7 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
     return (
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col space-y-8 animate-fadeIn text-[#f5f5f5] font-sans select-none">
         {/* Top Header: Always keep Place 大標 + 小字維持在上面，滑動時不消失 */}
-        <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-row items-end justify-between gap-4 transition-all border-b border-white/5">
+        <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-row items-end justify-between gap-4 transition-all">
           <div className="space-y-1.5 min-w-0">
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-[#ffffff] leading-none">
               Place
@@ -941,7 +1057,7 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col space-y-8 text-[#f5f5f5] font-sans">
       {/* Top Header: Always keep Place 大標 + 小字維持在上面，滑動時不消失 */}
-      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-row items-end justify-between gap-4 transition-all border-b border-white/5">
+      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-row items-end justify-between gap-4 transition-all">
         <div className="space-y-1.5 min-w-0">
           <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-[#ffffff] leading-none">
             Place
@@ -970,10 +1086,11 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
       </header>
 
       {/* LUXURIOUS INTEGRATED DOUBLE-PAGE SPREAD */}
-      <div className="grid grid-cols-1 md:grid-cols-12 min-h-[480px] md:min-h-[520px] bg-[#0c0c0e] border border-[#222222] rounded-3xl overflow-hidden shadow-2xl relative">
+      <div className="grid grid-cols-1 landscape:grid-cols-12 md:grid-cols-12 min-h-[480px] landscape:min-h-[360px] md:min-h-[520px] bg-[#0c0c0e] border border-[#222222] rounded-3xl overflow-hidden shadow-2xl relative">
         {/* ================= LEFT SPREAD: CELESTIAL GALAXIES CANVAS (NO MAP BACKGROUND) ================= */}
         <div
-          className="md:col-span-6 relative min-h-[400px] md:min-h-[520px] flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-[#1a1a22] bg-[#050508] cursor-grab active:cursor-grabbing select-none"
+          ref={galaxyCanvasRef}
+          className="landscape:col-span-6 md:col-span-6 relative min-h-[400px] landscape:min-h-[360px] md:min-h-[520px] flex items-center justify-center overflow-hidden border-b landscape:border-b-0 landscape:border-r md:border-b-0 md:border-r border-[#1a1a22] bg-[#050508] cursor-grab active:cursor-grabbing select-none"
           onClick={() => {
             // Clicking empty area outside any galaxy resets selection back to City description
             if (mapDragDistanceRef.current < 8) {
@@ -1044,7 +1161,7 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
               transformOrigin: 'center center',
             }}
           >
-            {/* Celestial Star Particles & White Transparent Interconnecting Orbit Threads */}
+            {/* Celestial Star Particles */}
             <svg
               className="absolute inset-0 w-full h-full pointer-events-none select-none"
               viewBox="0 0 560 560"
@@ -1062,13 +1179,19 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
                 <circle cx="50" cy="240" r="1.6" />
                 <circle cx="420" cy="280" r="1.2" />
               </g>
+            </svg>
 
-              {/* Interconnecting galaxy laser tether threads between Cooked At star systems (WHITE TRANSPARENT LINES) */}
-              {locationNodes.length > 1 && (
+            {/* Interconnecting galaxy laser tether threads aligned strictly to clamped node pixel centers */}
+            {positionedLocationNodes.length > 1 && (
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none select-none"
+                viewBox={`0 0 ${canvasBounds.width} ${canvasBounds.height}`}
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
                   d={(() => {
-                    const pts = locationNodes.map(
-                      (n) => `${(n.x * 5.6).toFixed(1)},${(n.y * 5.6).toFixed(1)}`
+                    const pts = positionedLocationNodes.map(
+                      (n) => `${n.px.toFixed(1)},${n.py.toFixed(1)}`
                     );
                     return `M ${pts.join(' L ')} Z`;
                   })()}
@@ -1077,12 +1200,12 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
                   strokeWidth="1.2"
                   strokeDasharray="4 6"
                 />
-              )}
-            </svg>
+              </svg>
+            )}
 
             {/* Cooked At Star Systems (Galaxies) */}
             <div className="absolute inset-0 w-full h-full">
-              {locationNodes.map((node) => {
+              {positionedLocationNodes.map((node) => {
                 const isSelected = selectedLocationId === node.id;
 
                 // Group dishes at this Cooked At galaxy by unique status icon variants
@@ -1103,13 +1226,12 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
                 });
                 const uniqueVariants = Array.from(variantMap.values());
 
-                // Galaxy outer orbital diameter scales with total spot mentions
-                const outerGalaxyDiameter = Math.max(120, Math.min(220, 100 + node.count * 18));
+                const outerGalaxyDiameter = node.outerGalaxyDiameter;
 
                 return (
                   <div
                     key={node.id}
-                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    style={{ left: `${node.px}px`, top: `${node.py}px` }}
                     className="absolute -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer flex flex-col items-center justify-center group/galaxy transition-transform duration-300 hover:scale-105 animate-float"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1175,15 +1297,19 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
                     />
 
                     {/* Galaxy Core Icons Container with Gravitational Attraction */}
-                    <div className="relative flex items-center justify-center flex-wrap gap-3 p-3 my-auto z-20">
+                    <div className="relative flex items-center justify-center flex-wrap gap-2 sm:gap-3 p-2 sm:p-3 my-auto z-20">
                       {uniqueVariants.map((v, vIdx) => {
                         const vDish = v.dish;
                         const vMoodColor = getMoodColor(vDish.mood);
                         const vIsCooked = vDish.cooked !== false;
                         const vLifeState = vDish.lifeState || 'moderate';
 
-                        // Dynamic icon size based on mention count! (1x = 22px, 2x = 30px, 3x = 38px, 4x+ = 48px)
-                        const iconDimension = Math.max(22, Math.min(50, 16 + v.count * 10));
+                        // Dynamic icon size based on mention count and scaled cleanly to galaxy bounds
+                        const baseIconDimension = Math.max(22, Math.min(50, 16 + v.count * 10));
+                        const iconDimension = Math.max(
+                          18,
+                          Math.round(baseIconDimension * Math.max(0.72, node.sizeScale))
+                        );
                         const variantKey = `${vDish.mood || 'happy'}-${vDish.lifeState || 'moderate'}-${vDish.cooked !== false}`;
                         const isThisIconActive = isSelected && selectedVariantKey === variantKey;
                         // Mutual gravitational attraction animation
@@ -1280,7 +1406,7 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
         </div>
 
         {/* ================= RIGHT SPREAD: EDITORIAL OVERVIEW & DISH MARQUEE (NO FULL-BLEED IMAGE) ================= */}
-        <div className="md:col-span-6 relative min-h-[400px] md:min-h-[520px] flex flex-col justify-between overflow-hidden bg-[#090a0d] select-none p-6 sm:p-10">
+        <div className="landscape:col-span-6 md:col-span-6 relative min-h-[400px] landscape:min-h-[360px] md:min-h-[520px] flex flex-col justify-between overflow-hidden bg-[#090a0d] select-none p-6 sm:p-10">
           {/* Top Editorial: Clickable City Name (returns to City wheel) + Spot Intro / City Prose */}
           <div className="space-y-4 max-w-lg w-full">
             <div className="space-y-1.5">
@@ -1402,6 +1528,133 @@ export const PlaceView: React.FC<PlaceViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* MOBILE PORTRAIT BOTTOM SHEET (Option A): Presents Right-Spread spot info & dish marquee when tapping a galaxy or icon */}
+      {isMobilePortrait &&
+        selectedNode &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-end">
+            <div
+              onClick={handleCloseGalaxySheet}
+              className="absolute inset-0 bg-black/75 backdrop-blur-sm animate-fadeIn"
+              aria-hidden="true"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedNode.locationName}
+              className="relative z-10 w-full bg-[#111111] border-t border-x border-[#262626] rounded-t-3xl px-5 pt-3 pb-7 max-h-[82vh] overflow-y-auto shadow-2xl animate-slide-up flex flex-col select-none"
+            >
+              <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4 shrink-0" aria-hidden="true" />
+
+              {/* Header: Country, City, Close */}
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/10">
+                <div className="space-y-1 min-w-0">
+                  <span className="text-[10px] font-mono text-[#888888] tracking-widest uppercase block">
+                    {currentCitySummary?.country || 'Worldwide'}
+                  </span>
+                  <h2 className="text-2xl font-bold text-white tracking-tight leading-none">
+                    {currentCityName}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseGalaxySheet}
+                  className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                  title="Close"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Spot Info */}
+              <div className="space-y-2 text-xs text-[#c0c4d6] leading-snug font-light pt-4">
+                <p className="text-white font-medium text-sm font-sans flex items-center gap-2">
+                  <SolidPlacePinIcon className="w-3.5 h-3.5 text-[#f97316] shrink-0" />
+                  <span>{selectedNode.locationName}</span>
+                  {selectedVariantKey && (
+                    <span className="text-[11px] font-mono text-[#888888] font-normal">
+                      · {getVariantLabel(selectedVariantKey)}
+                    </span>
+                  )}
+                </p>
+                <p>{getSpotIntro(selectedNode.locationName, currentCityName)}</p>
+              </div>
+
+              {/* Dish Marquee / Cards */}
+              <div className="w-full pt-4 border-t border-white/10 mt-5">
+                {marqueeDishes.length > 0 ? (
+                  marqueeDishes.length >= 4 ? (
+                    <div className="relative w-full overflow-hidden py-1">
+                      <div className="animate-marquee-rtl flex items-center gap-3.5">
+                        {marqueeTrackDishes.map((dish, idx) => (
+                          <div
+                            key={`${dish.id}-${idx}`}
+                            onClick={(e) => handleOpenInstagram(e, dish)}
+                            className="group/dish relative w-32 h-44 rounded-2xl overflow-hidden shrink-0 shadow-xl cursor-pointer bg-[#141416] transition-transform duration-300 hover:scale-105 select-none"
+                          >
+                            {dish.image ? (
+                              <img
+                                src={dish.image}
+                                alt={dish.title || 'Dish'}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/dish:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#18181c] flex items-center justify-center p-3 text-center" />
+                            )}
+                            <div
+                              className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 group-hover/dish:text-white group-hover/dish:bg-black/85 flex items-center justify-center shadow-lg transition-all"
+                              title="Open Instagram"
+                              onClick={(e) => handleOpenInstagram(e, dish)}
+                            >
+                              <Instagram className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative w-full overflow-x-auto scrollbar-none py-1">
+                      <div className="flex items-center gap-3.5">
+                        {marqueeDishes.map((dish, idx) => (
+                          <div
+                            key={`${dish.id}-${idx}`}
+                            onClick={(e) => handleOpenInstagram(e, dish)}
+                            className="group/dish relative w-32 h-44 rounded-2xl overflow-hidden shrink-0 shadow-xl cursor-pointer bg-[#141416] transition-transform duration-300 hover:scale-105 select-none"
+                          >
+                            {dish.image ? (
+                              <img
+                                src={dish.image}
+                                alt={dish.title || 'Dish'}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover/dish:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#18181c] flex items-center justify-center p-3 text-center" />
+                            )}
+                            <div
+                              className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 group-hover/dish:text-white group-hover/dish:bg-black/85 flex items-center justify-center shadow-lg transition-all"
+                              title="Open Instagram"
+                              onClick={(e) => handleOpenInstagram(e, dish)}
+                            >
+                              <Instagram className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="py-6 text-center text-xs font-mono text-[#666666]">
+                    No dishes found matching this icon definition.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

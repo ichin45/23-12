@@ -16,7 +16,7 @@ const CHAPTERS = [
   {
     num: '01',
     title: 'Reality',
-    subtitle: 'Beyond the virtual, there is the everyday.',
+    subtitle: 'Beyond the virtual,\nthere is the everyday.',
     image: realityImg,
     alt: 'Fresh root vegetables, carrots, and peppers on a kitchen counter',
     description:
@@ -25,7 +25,7 @@ const CHAPTERS = [
   {
     num: '02',
     title: 'Memories',
-    subtitle: 'A dish is a point in time. A place is a way back.',
+    subtitle: 'A dish is a point in time.\nA place is a way back.',
     image: memoriesImg,
     alt: 'Electric mixer beating batter inside a glass bowl',
     description:
@@ -43,15 +43,14 @@ const CHAPTERS = [
 ];
 
 // Unified Typographic Scale Tokens
-// H1 height (~49px on sm+) matches H2 (~28px) + H3 (~20px) in Section 4 lockups
 const TYPE_H1_BASE =
   'text-[42px] sm:text-[52px] font-semibold tracking-[-0.03em] text-white';
 const TYPE_H1 = `${TYPE_H1_BASE} leading-[0.95]`;
 const TYPE_H2 =
   'text-xl sm:text-2xl font-semibold tracking-[-0.02em] leading-[1.15] text-white';
-const TYPE_H3 = 'text-sm sm:text-base font-normal text-white leading-[1.25]';
+const TYPE_H3 = 'text-sm lg:text-base font-normal text-white leading-[1.25]';
 const TYPE_NORMAL_BASE =
-  'text-xs sm:text-[13px] font-normal tracking-[0.04em] leading-[1.9]';
+  'text-[10.5px] sm:text-xs md:text-[10.5px] lg:text-xs font-normal tracking-[0.015em] lg:tracking-[0.03em] leading-[1.95]';
 const TYPE_NORMAL = `${TYPE_NORMAL_BASE} text-[#9ca3af]`;
 
 const CommaQuoteMark: React.FC<{ variant: 'open' | 'close'; className?: string }> = ({
@@ -68,6 +67,44 @@ const CommaQuoteMark: React.FC<{ variant: 'open' | 'close'; className?: string }
     <path d="M32 10.5C32 7.19 29.31 4.5 26 4.5C22.69 4.5 20 7.19 20 10.5C20 13.65 22.44 16.23 25.53 16.48C25.3 19.1 23.65 21.35 21.1 22.85L22.6 25C28.4 22.2 32 17.1 32 10.5Z" />
   </svg>
 );
+
+const ChapterLockup: React.FC<{ num: string; title: string; subtitle: string }> = ({
+  num,
+  title,
+  subtitle,
+}) => {
+  const subtitleLines = subtitle.split('\n');
+
+  return (
+    <div className="flex items-start gap-3.5 text-left">
+      <span
+        className="text-white font-bold tracking-[-0.02em] select-none shrink-0 block text-[84px] sm:max-lg:portrait:text-[92px] landscape:text-[72px] lg:text-[72px] leading-[0.75] tabular-nums"
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontFeatureSettings: '"lnum" 1, "tnum" 1',
+        }}
+      >
+        {num}
+      </span>
+      <div className="flex flex-col justify-start min-w-0">
+        <h3 className={TYPE_H2}>{title}</h3>
+        <p className={`${TYPE_H3} mt-0.5`}>
+          {subtitleLines.map((line, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && (
+                <>
+                  <br className="hidden max-lg:portrait:inline" />
+                  <span className="inline max-lg:portrait:hidden"> </span>
+                </>
+              )}
+              {line}
+            </React.Fragment>
+          ))}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const VERTICAL_GUIDE_OPACITIES = Array.from({ length: 10 }, (_, i) => i / 9);
 
@@ -94,7 +131,7 @@ export const AboutView: React.FC = () => {
   return (
     <div className="w-full flex flex-col text-white font-sans bg-[#080808] pt-10 sm:pt-16">
       {/* Sticky Page Header: 23:12 with breathing colon matching Year, Dish, Place */}
-      <header className="sticky top-14 z-40 w-full bg-[#080808]/95 backdrop-blur-md border-b border-white/5">
+      <header className="sticky top-14 z-40 w-full bg-[#080808]/95 backdrop-blur-md">
         <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 transition-all">
           <div className="space-y-1.5 min-w-0">
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-[#ffffff] leading-none flex items-baseline select-none">
@@ -132,11 +169,11 @@ export const AboutView: React.FC = () => {
           </figure>
         </section>
 
-        {/* SECTION 1 — Who cooks! (H2) + Self Portrait + Self-Introduction + External Links */}
+        {/* SECTION 1 — Who cooks! (H2) + Self Portrait (original ratio) + Self-Introduction (30px gap) + External Links */}
         <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 items-stretch text-left">
-            <div className="md:col-span-4 flex flex-col justify-end">
-              <figure className="w-full max-w-[300px] overflow-hidden bg-[#080808]">
+          <div className="flex flex-col md:flex-row items-start md:items-stretch gap-[30px] text-left">
+            <div className="w-full max-w-[270px] sm:max-w-[300px] md:w-[285px] lg:w-[300px] shrink-0 flex flex-col justify-end">
+              <figure className="w-full bg-[#080808]">
                 <img
                   src={selfPortraitImg}
                   alt="Portrait of the author"
@@ -145,7 +182,7 @@ export const AboutView: React.FC = () => {
               </figure>
             </div>
 
-            <div className="md:col-span-7 md:col-start-6 flex flex-col justify-between space-y-10">
+            <div className="flex-1 min-w-0 flex flex-col justify-between space-y-10">
               <div className="space-y-4">
                 <h2 className={TYPE_H2}>Who cooks!</h2>
                 <div className={`${TYPE_NORMAL} space-y-5`}>
@@ -246,7 +283,7 @@ export const AboutView: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 4 — Left-Aligned Image + Lockup (H1 = H2 + H3), Right Click-to-Reveal Comma Quotes */}
+        {/* SECTION 4 — Left-Aligned Original-Color Photo + Height-Synced Bold Serif Lockup, Right Click-to-Reveal Comma Quotes */}
         <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-12 sm:pt-6 sm:pb-16 space-y-20 sm:space-y-28">
           {CHAPTERS.map((chapter) => {
             const isOpen = !!openChapters[chapter.num];
@@ -255,7 +292,7 @@ export const AboutView: React.FC = () => {
                 key={chapter.num}
                 className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start text-left"
               >
-                {/* Left: Uncropped Full-Color Photo + Lockup (H1 = H2 + H3) */}
+                {/* Left: Uncropped Full-Color Photo + Lockup (Bold Serif H1 synced to H2 + H3 height) */}
                 <div className="md:col-span-6 space-y-4 text-left">
                   <figure className="w-full overflow-hidden">
                     <img
@@ -265,15 +302,11 @@ export const AboutView: React.FC = () => {
                     />
                   </figure>
 
-                  <div className="flex items-center gap-3.5 text-left">
-                    <span className={`${TYPE_H1} select-none shrink-0`}>
-                      {chapter.num}
-                    </span>
-                    <div className="flex flex-col justify-center min-w-0">
-                      <h3 className={TYPE_H2}>{chapter.title}</h3>
-                      <p className={`${TYPE_H3} mt-0.5`}>{chapter.subtitle}</p>
-                    </div>
-                  </div>
+                  <ChapterLockup
+                    num={chapter.num}
+                    title={chapter.title}
+                    subtitle={chapter.subtitle}
+                  />
                 </div>
 
                 {/* Right: Clickable Comma-Shaped Quotes Revealing Continuous Prose with Symmetric Top/Bottom Spacing */}
@@ -296,7 +329,13 @@ export const AboutView: React.FC = () => {
                           variant="open"
                           className="h-7 sm:h-9 w-auto text-white shrink-0 group-hover:opacity-70 transition-opacity"
                         />
-                        <p className={`${TYPE_NORMAL} whitespace-pre-line`}>{chapter.description}</p>
+                        <p className={TYPE_NORMAL}>
+                          {chapter.description.split('\n').map((line, idx) => (
+                            <span key={idx} className="block">
+                              {line}
+                            </span>
+                          ))}
+                        </p>
                         <CommaQuoteMark
                           variant="close"
                           className="h-7 sm:h-9 w-auto text-white shrink-0 group-hover:opacity-70 transition-opacity"

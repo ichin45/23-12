@@ -170,7 +170,7 @@ export default function App() {
 
       {/* Header Navigation - Permanently FIXED above Year, Dish, Place, About */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#080808]/95 backdrop-blur-md border-b border-white/5 w-full">
-        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4 sm:gap-6">
+        <div className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           {/* Left: Wordmark back to home or refresh if already on home */}
           <button
             type="button"
@@ -183,8 +183,8 @@ export default function App() {
             </span>
           </button>
 
-          {/* Navigation Modes: Borderless & Backgroundless icons matching 23:12 height */}
-          <nav className="flex items-center gap-4 sm:gap-7">
+          {/* Center: Navigation Modes truly centered in viewport */}
+          <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3.5">
             {/* YEAR */}
             <button
               type="button"
@@ -259,35 +259,41 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Right: Borderless & Backgroundless Export / Import JSON Actions */}
-          <div className="flex items-center gap-3 sm:gap-5 text-xs shrink-0">
+          {/* Right: Borderless & Backgroundless Export / Import Icons Only */}
+          <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
             <button
               type="button"
               onClick={handleExportJson}
-              title="Export dishes.json"
+              title={jsonActionLabel === 'exported' ? 'Exported dishes.json' : 'Export dishes.json'}
               aria-label="Export JSON"
-              className="inline-flex items-center gap-1.5 p-1 bg-transparent border-0 text-[#888888] hover:text-[#ffffff] transition-colors cursor-pointer whitespace-nowrap"
+              className={`inline-flex items-center justify-center p-1 bg-transparent border-0 transition-colors cursor-pointer ${
+                jsonActionLabel === 'exported'
+                  ? 'text-[#ffffff]'
+                  : 'text-[#888888] hover:text-[#ffffff]'
+              }`}
             >
               <Download className="w-[18px] h-[18px]" />
-              <span className="hidden sm:inline font-medium">
-                {jsonActionLabel === 'exported' ? 'Exported' : 'Export'}
-              </span>
             </button>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              title="Import dishes.json"
+              title={
+                jsonActionLabel === 'imported'
+                  ? 'Imported dishes.json'
+                  : jsonActionLabel === 'error'
+                    ? 'Invalid JSON file'
+                    : 'Import dishes.json'
+              }
               aria-label="Import JSON"
-              className="inline-flex items-center gap-1.5 p-1 bg-transparent border-0 text-[#888888] hover:text-[#ffffff] transition-colors cursor-pointer whitespace-nowrap"
+              className={`inline-flex items-center justify-center p-1 bg-transparent border-0 transition-colors cursor-pointer ${
+                jsonActionLabel === 'error'
+                  ? 'text-red-400'
+                  : jsonActionLabel === 'imported'
+                    ? 'text-[#ffffff]'
+                    : 'text-[#888888] hover:text-[#ffffff]'
+              }`}
             >
               <Upload className="w-[18px] h-[18px]" />
-              <span className="hidden sm:inline font-medium">
-                {jsonActionLabel === 'imported'
-                  ? 'Imported'
-                  : jsonActionLabel === 'error'
-                    ? 'Invalid'
-                    : 'Import'}
-              </span>
             </button>
             <input
               ref={fileInputRef}

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   MapPin,
@@ -195,6 +196,38 @@ export const YearView: React.FC<YearViewProps> = ({
   const [selectedComboId, setSelectedComboId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [playingDishId, setPlayingDishId] = useState<string | null>(null);
+  const sidePanelRef = useRef<HTMLElement | null>(null);
+
+  const checkShouldUseBottomSheet = () => {
+    if (typeof window === 'undefined') return false;
+    const width = window.innerWidth;
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    const isTouchDevice =
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      (navigator.maxTouchPoints > 0 && /iPhone|iPad|iPod|Android|Tablet|Mobile/i.test(navigator.userAgent));
+
+    if (width < 768) return true;
+    if (width <= 1024 && isPortrait) return true;
+    if (isTouchDevice && (isPortrait || minDim < 600)) return true;
+    return false;
+  };
+
+  const [useBottomSheet, setUseBottomSheet] = useState<boolean>(checkShouldUseBottomSheet);
+
+  useEffect(() => {
+    const updateLayoutMode = () => setUseBottomSheet(checkShouldUseBottomSheet());
+    updateLayoutMode();
+    const orientationMq = window.matchMedia('(orientation: portrait)');
+    window.addEventListener('resize', updateLayoutMode);
+    window.addEventListener('orientationchange', updateLayoutMode);
+    orientationMq.addEventListener('change', updateLayoutMode);
+    return () => {
+      window.removeEventListener('resize', updateLayoutMode);
+      window.removeEventListener('orientationchange', updateLayoutMode);
+      orientationMq.removeEventListener('change', updateLayoutMode);
+    };
+  }, []);
 
   useEffect(() => {
     const unsub = subscribeAudioState((id) => setPlayingDishId(id));
@@ -368,6 +401,17 @@ export const YearView: React.FC<YearViewProps> = ({
     setSelectedDate(null);
   };
 
+  useEffect(() => {
+    if (!hasRightPanel) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleCloseRightPanel();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hasRightPanel, playingDishId]);
+
   const isDishMatchingCombo = (dish: DateVibeItem) => {
     if (!selectedCombo) return false;
     const dMood = dish.mood || 'happy';
@@ -392,10 +436,325 @@ export const YearView: React.FC<YearViewProps> = ({
     </span>
   );
 
+  const renderDishDetailContent = (isBottomSheet = false) => {
+    if (!selectedDish) return null;
+    const dMood: MoodType = selectedDish.mood || 'happy';
+    const dLife: LifeStateType = selectedDish.lifeState || 'moderate';
+    const dCooked = selectedDish.cooked !== false;
+    const dColor = getMoodColor(dMood);
+    const moodTitle = MOOD_DESCRIPTIONS[dMood].title;
+    const lifeTitle = LIFE_DESCRIPTIONS[dLife].title;
+    const isAudioPlaying = playingDishId === selectedDish.id;
+
+    return (
+      <div className="space-y-5">
+        {/* Header: No., Date, Edit & Close */}
+        <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/10">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs text-[#888888] font-mono tabular-nums">
+              <span>{selectedDish.date}</span>
+              {selectedDish.dishNumber && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>No. {selectedDish.dishNumber}</span>
+                </>
+              )}
+            </div>
+            <h2 className="text-xl font-bold text-white tracking-tight leading-snug break-words">
+              {selectedDish.title || (selectedDish.dishNumber ? `Dish No. ${selectedDish.dishNumber}` : 'Midnight Record')}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => onSelectDish(selectedDish)}
+              className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Edit record"
+              aria-label="Edit record"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleCloseRightPanel}
+              className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Close and return to Year summary"
+              aria-label="Close panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body: On tablet portrait Bottom Sheet (sm+ inside bottom sheet), vertical portrait photo left + info right */}
+        <div
+          className={
+            isBottomSheet
+              ? 'flex flex-col sm:flex-row sm:items-start gap-5 sm:gap-6'
+              : 'space-y-5'
+          }
+        >
+          {/* Dish Photo (if present) */}
+          {selectedDish.image ? (
+            <div
+              className={`relative rounded-xl overflow-hidden bg-[#0a0a0c] shrink-0 ${
+                isBottomSheet
+                  ? 'w-full aspect-[16/10] sm:w-[220px] md:w-[260px] sm:aspect-[3/4]'
+                  : 'aspect-[16/10] w-full'
+              }`}
+            >
+              <img
+                src={selectedDish.image}
+                alt={selectedDish.title || 'Dish'}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          <div className={isBottomSheet ? 'flex-1 min-w-0 space-y-5' : 'space-y-5'}>
+            {/* Clean Unboxed Status Metadata */}
+            <div className="flex items-center gap-3 text-xs text-[#cccccc]">
+              <VibeGlyph
+                mood={dMood}
+                life={dLife}
+                isCooked={dCooked}
+                color={dColor}
+                size="md"
+              />
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-medium text-white">{moodTitle}</span>
+                <span className="text-[#666666]" aria-hidden="true">·</span>
+                <span>{lifeTitle}</span>
+                <span className="text-[#666666]" aria-hidden="true">·</span>
+                <span className="text-[#a1a1aa]">{dCooked ? 'Cooked' : 'No Cook'}</span>
+              </div>
+            </div>
+
+            {/* Quote */}
+            {selectedDish.quote && (
+              <p className="text-xs italic text-[#a1a1aa] leading-relaxed">
+                “{selectedDish.quote}”
+              </p>
+            )}
+
+            {/* Note */}
+            {selectedDish.note && (
+              <div className="space-y-1.5 pt-2 border-t border-white/5">
+                <span className="text-[11px] text-[#777777] font-medium block">
+                  Something about...
+                </span>
+                <p className="text-xs sm:text-[13px] text-[#d4d4d8] leading-relaxed whitespace-pre-line">
+                  {selectedDish.note}
+                </p>
+              </div>
+            )}
+
+            {/* Place & Links */}
+            <div className="space-y-2.5 pt-3 border-t border-white/10 text-xs">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-[#888888]">
+                  <Globe className="w-3.5 h-3.5 text-white/70" />
+                  <span>Lived In</span>
+                </span>
+                <span className="text-white font-medium text-right truncate">
+                  {selectedDish.city?.name || 'Hsinchu'}
+                  {selectedDish.city?.country ? `, ${selectedDish.city.country}` : ''}
+                </span>
+              </div>
+
+              {dCooked && selectedDish.city?.location && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 text-[#888888]">
+                    <MapPin className="w-3.5 h-3.5 text-white/70" />
+                    <span>Cooked At</span>
+                  </span>
+                  <span className="text-white font-medium text-right truncate">
+                    {selectedDish.city.location}
+                  </span>
+                </div>
+              )}
+
+              {Boolean(selectedDish.youtubeUrl && selectedDish.youtubeUrl.trim()) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleInPageAudio(selectedDish.id, selectedDish.youtubeUrl, (id) =>
+                      setPlayingDishId(id)
+                    )
+                  }
+                  className="w-full flex items-center justify-between gap-3 pt-1 text-left group cursor-pointer"
+                  title={isAudioPlaying ? 'Pause music' : 'Play music'}
+                >
+                  <span className="inline-flex items-center gap-2 text-[#888888] group-hover:text-white transition-colors shrink-0">
+                    <AudioBarsIcon isPlaying={isAudioPlaying} />
+                    <span>Music</span>
+                  </span>
+                  <span className="inline-flex items-center gap-2 text-white font-medium min-w-0">
+                    <span className="truncate max-w-[180px]">
+                      {selectedDish.songTitle || 'Midnight Melody'}
+                    </span>
+                    {isAudioPlaying ? (
+                      <Pause fill="currentColor" className="w-3.5 h-3.5 text-white shrink-0" />
+                    ) : (
+                      <Play fill="currentColor" className="w-3.5 h-3.5 text-[#a1a1aa] group-hover:text-white shrink-0" />
+                    )}
+                  </span>
+                </button>
+              )}
+
+              {selectedDish.igUrl && (
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <span className="inline-flex items-center gap-2 text-[#888888]">
+                    <Instagram className="w-3.5 h-3.5 text-white/70" />
+                    <span>Post</span>
+                  </span>
+                  <a
+                    href={selectedDish.igUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-white/90 hover:text-white hover:underline transition-colors"
+                  >
+                    <span>View on Instagram</span>
+                    <ExternalLink className="w-3 h-3 text-[#888888]" />
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderComboDetailContent = () => {
+    if (!selectedCombo) return null;
+    const moodInfo = MOOD_DESCRIPTIONS[selectedCombo.mood];
+    const lifeInfo = LIFE_DESCRIPTIONS[selectedCombo.life];
+    const cookedCount = comboMatchingDishes.filter((d) => d.cooked !== false).length;
+    const noCookCount = comboMatchingDishes.length - cookedCount;
+
+    return (
+      <div className="space-y-4 sm:space-y-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 pb-3 sm:pb-4 border-b border-white/10">
+          <div className="flex items-center gap-3.5">
+            <VibeGlyph
+              mood={selectedCombo.mood}
+              life={selectedCombo.life}
+              isCooked={true}
+              color={selectedCombo.color}
+              size="lg"
+            />
+            <div className="space-y-0.5">
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                {selectedCombo.label}
+              </h2>
+              <p className="text-xs text-[#888888] font-mono tabular-nums">
+                {comboMatchingDishes.length}{' '}
+                {comboMatchingDishes.length === 1 ? 'record' : 'records'} in {selectedYear}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCloseRightPanel}
+            className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+            title="Clear filter"
+            aria-label="Clear filter"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Explanation Breakdown: Mood, Life, Cook, No Cook in unified 2x2 grid */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-5 flex items-center justify-center shrink-0">
+              <VibeGlyph
+                mood={selectedCombo.mood}
+                life={selectedCombo.life}
+                isCooked={true}
+                color={selectedCombo.color}
+                size="sm"
+              />
+            </span>
+            <span className="font-semibold text-white truncate">
+              Mood: {moodInfo.title}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-5 flex items-center justify-center shrink-0">
+              <VibeGlyph
+                mood={selectedCombo.mood}
+                life={selectedCombo.life}
+                isCooked={true}
+                color={selectedCombo.color}
+                size="sm"
+              />
+            </span>
+            <span className="font-semibold text-white truncate">
+              Life: {lifeInfo.title}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-5 flex items-center justify-center shrink-0 opacity-50">
+              <VibeGlyph
+                mood={selectedCombo.mood}
+                life={selectedCombo.life}
+                isCooked={true}
+                color={selectedCombo.color}
+                size="sm"
+              />
+            </span>
+            <span className="font-semibold text-white font-mono tabular-nums truncate">
+              Cook: {cookedCount}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-5 flex items-center justify-center shrink-0 opacity-50">
+              <VibeGlyph
+                mood={selectedCombo.mood}
+                life={selectedCombo.life}
+                isCooked={false}
+                color={selectedCombo.color}
+                size="sm"
+              />
+            </span>
+            <span className="font-semibold text-white font-mono tabular-nums truncate">
+              No Cook: {noCookCount}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const showDesktopSidePanel = hasRightPanel && !useBottomSheet;
+  const showMobileBottomSheet = hasRightPanel && useBottomSheet;
+
+  useEffect(() => {
+    if (!showDesktopSidePanel) return;
+    const handleClickEmptySpace = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (sidePanelRef.current?.contains(target)) return;
+      if (target.closest('button, a, [role="button"]')) return;
+      handleCloseRightPanel();
+    };
+    document.addEventListener('mousedown', handleClickEmptySpace);
+    return () => document.removeEventListener('mousedown', handleClickEmptySpace);
+  }, [showDesktopSidePanel, playingDishId]);
+
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col space-y-8 animate-fadeIn text-[#f5f5f5] font-sans">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col space-y-8 animate-fadeIn text-[#f5f5f5] font-sans">
       {/* 1. Header: 2026 大標與簡短文字說明，右側上方為可點選的 3x3 篩選 Icon */}
-      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 transition-all border-b border-white/5">
+      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 transition-all">
         <div className="space-y-1.5">
           <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-[#ffffff] leading-none">
             {selectedYear}
@@ -484,30 +843,26 @@ export const YearView: React.FC<YearViewProps> = ({
 
       {/* 2. Main Split Area: Left Matrix + Optional Appearing Right Panel */}
       <div
-        className={`grid grid-cols-1 gap-6 ${
-          hasRightPanel
-            ? selectedDish
-              ? 'lg:grid-cols-12 lg:items-stretch'
-              : 'lg:grid-cols-12 items-start'
-            : 'items-start'
+        className={`grid gap-6 items-start ${
+          showDesktopSidePanel ? 'grid-cols-12' : 'grid-cols-1'
         }`}
       >
         {/* LEFT: Emotional Map Grid (行 = 月份、欄 = 日期) */}
         <section
-          className={`order-2 lg:order-1 w-full bg-[#111111] border border-[#222222] rounded-2xl shadow-2xl relative min-h-[480px] transition-all ${
-            hasRightPanel ? 'lg:col-span-8 p-4 sm:p-6' : 'p-4 sm:p-8'
+          className={`order-1 w-full bg-[#111111] border border-[#222222] rounded-2xl shadow-2xl relative min-h-[480px] transition-all ${
+            showDesktopSidePanel ? 'col-span-8 p-4 sm:p-6' : 'p-4 sm:p-8'
           }`}
         >
           {/* Landscape Wide Matrix (Desktop) */}
           <div
-            className={`hidden lg:flex flex-col space-y-3 pt-2 w-full ${
-              hasRightPanel ? '' : 'min-w-[820px]'
+            className={`${useBottomSheet ? 'hidden' : 'hidden lg:flex'} flex-col space-y-3 pt-2 w-full ${
+              showDesktopSidePanel ? '' : 'min-w-[820px]'
             }`}
           >
             {/* Days Column Header */}
             <div
               className={`grid items-center text-center text-xs text-[#888888] font-mono tabular-nums pb-2 border-b border-[#1f1f1f] ${
-                hasRightPanel
+                showDesktopSidePanel
                   ? 'grid-cols-[44px_repeat(31,minmax(0,1fr))]'
                   : 'grid-cols-[56px_repeat(31,minmax(0,1fr))]'
               }`}
@@ -531,7 +886,7 @@ export const YearView: React.FC<YearViewProps> = ({
                   <div
                     key={m.short}
                     className={`grid items-center text-center py-1 rounded-lg hover:bg-[#181818]/70 transition-colors ${
-                      hasRightPanel
+                      showDesktopSidePanel
                         ? 'grid-cols-[44px_repeat(31,minmax(0,1fr))]'
                         : 'grid-cols-[56px_repeat(31,minmax(0,1fr))]'
                     }`}
@@ -590,14 +945,14 @@ export const YearView: React.FC<YearViewProps> = ({
                                 <ExplosiveBurstIcon
                                   color={moodColor}
                                   isCooked={isCooked}
-                                  size={hasRightPanel ? 20 : 26}
+                                  size={showDesktopSidePanel ? 20 : 26}
                                   className="animate-busy-pulse"
                                   showWaveform={!isDimmed}
                                 />
                               ) : lifeState === 'moderate' ? (
                                 <span
                                   className={`${
-                                    hasRightPanel ? 'w-3 h-3' : 'w-3.5 h-3.5'
+                                    showDesktopSidePanel ? 'w-3 h-3' : 'w-3.5 h-3.5'
                                   } rounded-full block transition-transform animate-moderate-breathe`}
                                   style={{
                                     backgroundColor: isCooked ? moodColor : 'transparent',
@@ -643,7 +998,7 @@ export const YearView: React.FC<YearViewProps> = ({
           </div>
 
           {/* Vertical Portrait Matrix (Mobile / Tablet Portrait) */}
-          <div className="block lg:hidden w-full flex flex-col space-y-2 pt-1">
+          <div className={`${useBottomSheet ? 'flex' : 'block lg:hidden'} w-full flex-col space-y-2 pt-1`}>
             {/* Header Row: Date on left, 12 Months across */}
             <div className="grid grid-cols-[32px_repeat(12,1fr)] items-center text-center text-[11px] sm:text-xs text-[#888888] font-mono tabular-nums pb-2.5 border-b border-[#1f1f1f]">
               <div className="text-left font-sans text-[11px] sm:text-xs text-[#888888] font-medium">
@@ -772,313 +1127,48 @@ export const YearView: React.FC<YearViewProps> = ({
           </div>
         </section>
 
-        {/* RIGHT SIDE PANEL: Mode 1 (Combination Explanation) OR Mode 2 (Single Date Record) */}
-        {hasRightPanel && (
+        {/* RIGHT SIDE PANEL (Desktop both orientations + Landscape Tablet): Mode 1 OR Mode 2 */}
+        {showDesktopSidePanel && (
           <aside
-            className={`order-1 lg:order-2 lg:col-span-4 w-full bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-2xl animate-fadeIn flex flex-col ${
-              selectedDish ? 'lg:h-full' : 'lg:sticky lg:top-48 space-y-6'
+            ref={sidePanelRef}
+            className={`order-2 col-span-4 w-full bg-[#111111] border border-[#222222] rounded-2xl p-6 shadow-2xl animate-fadeIn flex flex-col sticky top-48 ${
+              selectedCombo ? 'space-y-6' : ''
             }`}
           >
-            {selectedDish ? (
-              /* MODE 2: SINGLE DATE RECORD DETAILS */
-              (() => {
-                const dMood: MoodType = selectedDish.mood || 'happy';
-                const dLife: LifeStateType = selectedDish.lifeState || 'moderate';
-                const dCooked = selectedDish.cooked !== false;
-                const dColor = getMoodColor(dMood);
-                const moodTitle = MOOD_DESCRIPTIONS[dMood].title;
-                const lifeTitle = LIFE_DESCRIPTIONS[dLife].title;
-                const isAudioPlaying = playingDishId === selectedDish.id;
-
-                return (
-                  <div className="flex-1 flex flex-col justify-between gap-6">
-                    <div className="space-y-5">
-                    {/* Header: No., Date, Edit & Close */}
-                    <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/10">
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs text-[#888888] font-mono tabular-nums">
-                          <span>{selectedDish.date}</span>
-                          {selectedDish.dishNumber && (
-                            <>
-                              <span aria-hidden="true">·</span>
-                              <span>No. {selectedDish.dishNumber}</span>
-                            </>
-                          )}
-                        </div>
-                        <h2 className="text-xl font-bold text-white tracking-tight leading-snug break-words">
-                          {selectedDish.title || (selectedDish.dishNumber ? `Dish No. ${selectedDish.dishNumber}` : 'Midnight Record')}
-                        </h2>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => onSelectDish(selectedDish)}
-                          className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                          title="Edit record"
-                          aria-label="Edit record"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCloseRightPanel}
-                          className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                          title="Close and return to Year summary"
-                          aria-label="Close panel"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Dish Photo (if present) */}
-                    {selectedDish.image ? (
-                      <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-[#0a0a0c]">
-                        <img
-                          src={selectedDish.image}
-                          alt={selectedDish.title || 'Dish'}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : null}
-
-                    {/* Clean Unboxed Status Metadata */}
-                    <div className="flex items-center gap-3 text-xs text-[#cccccc]">
-                      <VibeGlyph
-                        mood={dMood}
-                        life={dLife}
-                        isCooked={dCooked}
-                        color={dColor}
-                        size="md"
-                      />
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-medium text-white">{moodTitle}</span>
-                        <span className="text-[#666666]" aria-hidden="true">·</span>
-                        <span>{lifeTitle}</span>
-                        <span className="text-[#666666]" aria-hidden="true">·</span>
-                        <span className="text-[#a1a1aa]">{dCooked ? 'Cooked' : 'No Cook'}</span>
-                      </div>
-                    </div>
-
-                    {/* Quote */}
-                    {selectedDish.quote && (
-                      <p className="text-xs italic text-[#a1a1aa] leading-relaxed">
-                        “{selectedDish.quote}”
-                      </p>
-                    )}
-
-                    {/* Note */}
-                    {selectedDish.note && (
-                      <div className="space-y-1.5 pt-2 border-t border-white/5">
-                        <span className="text-[11px] text-[#777777] font-medium block">
-                          Something about...
-                        </span>
-                        <p className="text-xs sm:text-[13px] text-[#d4d4d8] leading-relaxed whitespace-pre-line">
-                          {selectedDish.note}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Place & Links */}
-                    <div className="space-y-2.5 pt-3 border-t border-white/10 text-xs">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="inline-flex items-center gap-2 text-[#888888]">
-                          <Globe className="w-3.5 h-3.5 text-white/70" />
-                          <span>Lived In</span>
-                        </span>
-                        <span className="text-white font-medium text-right truncate">
-                          {selectedDish.city?.name || 'Hsinchu'}
-                          {selectedDish.city?.country ? `, ${selectedDish.city.country}` : ''}
-                        </span>
-                      </div>
-
-                      {dCooked && selectedDish.city?.location && (
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="inline-flex items-center gap-2 text-[#888888]">
-                            <MapPin className="w-3.5 h-3.5 text-white/70" />
-                            <span>Cooked At</span>
-                          </span>
-                          <span className="text-white font-medium text-right truncate">
-                            {selectedDish.city.location}
-                          </span>
-                        </div>
-                      )}
-
-                      {Boolean(selectedDish.youtubeUrl && selectedDish.youtubeUrl.trim()) && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            toggleInPageAudio(selectedDish.id, selectedDish.youtubeUrl, (id) =>
-                              setPlayingDishId(id)
-                            )
-                          }
-                          className="w-full flex items-center justify-between gap-3 pt-1 text-left group cursor-pointer"
-                          title={isAudioPlaying ? 'Pause music' : 'Play music'}
-                        >
-                          <span className="inline-flex items-center gap-2 text-[#888888] group-hover:text-white transition-colors shrink-0">
-                            <AudioBarsIcon isPlaying={isAudioPlaying} />
-                            <span>Music</span>
-                          </span>
-                          <span className="inline-flex items-center gap-2 text-white font-medium min-w-0">
-                            <span className="truncate max-w-[180px]">
-                              {selectedDish.songTitle || 'Midnight Melody'}
-                            </span>
-                            {isAudioPlaying ? (
-                              <Pause fill="currentColor" className="w-3.5 h-3.5 text-white shrink-0" />
-                            ) : (
-                              <Play fill="currentColor" className="w-3.5 h-3.5 text-[#a1a1aa] group-hover:text-white shrink-0" />
-                            )}
-                          </span>
-                        </button>
-                      )}
-
-                      {selectedDish.igUrl && (
-                        <div className="flex items-center justify-between gap-3 pt-1">
-                          <span className="inline-flex items-center gap-2 text-[#888888]">
-                            <Instagram className="w-3.5 h-3.5 text-white/70" />
-                            <span>Post</span>
-                          </span>
-                          <a
-                            href={selectedDish.igUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-white/90 hover:text-white hover:underline transition-colors"
-                          >
-                            <span>View on Instagram</span>
-                            <ExternalLink className="w-3 h-3 text-[#888888]" />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    </div>
-
-                    {/* Footer action: Back to Year anchored at the bottom */}
-                    <div className="pt-4 mt-auto border-t border-white/10 flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={handleCloseRightPanel}
-                        className="px-3 py-1.5 rounded-lg text-xs text-[#888888] hover:text-white transition-colors cursor-pointer whitespace-nowrap"
-                      >
-                        Back to Year
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()
-            ) : selectedCombo ? (
-              /* MODE 1: COMBINATION FILTER EXPLANATION PANEL */
-              (() => {
-                const moodInfo = MOOD_DESCRIPTIONS[selectedCombo.mood];
-                const lifeInfo = LIFE_DESCRIPTIONS[selectedCombo.life];
-                const cookedCount = comboMatchingDishes.filter((d) => d.cooked !== false).length;
-                const noCookCount = comboMatchingDishes.length - cookedCount;
-
-                return (
-                  <div className="space-y-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3 pb-4 border-b border-white/10">
-                      <div className="flex items-center gap-3.5">
-                        <VibeGlyph
-                          mood={selectedCombo.mood}
-                          life={selectedCombo.life}
-                          isCooked={true}
-                          color={selectedCombo.color}
-                          size="lg"
-                        />
-                        <div className="space-y-0.5">
-                          <h2 className="text-lg font-bold text-white tracking-tight">
-                            {selectedCombo.label}
-                          </h2>
-                          <p className="text-xs text-[#888888] font-mono tabular-nums">
-                            {comboMatchingDishes.length}{' '}
-                            {comboMatchingDishes.length === 1 ? 'record' : 'records'} in {selectedYear}
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleCloseRightPanel}
-                        className="p-2 rounded-lg text-[#a1a1aa] hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-                        title="Clear filter"
-                        aria-label="Clear filter"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Explanation Breakdown: Mood, Life, Cook, No Cook in unified 2x2 grid */}
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-5 flex items-center justify-center shrink-0">
-                          <VibeGlyph
-                            mood={selectedCombo.mood}
-                            life={selectedCombo.life}
-                            isCooked={true}
-                            color={selectedCombo.color}
-                            size="sm"
-                          />
-                        </span>
-                        <span className="font-semibold text-white truncate">
-                          Mood: {moodInfo.title}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-5 flex items-center justify-center shrink-0">
-                          <VibeGlyph
-                            mood={selectedCombo.mood}
-                            life={selectedCombo.life}
-                            isCooked={true}
-                            color={selectedCombo.color}
-                            size="sm"
-                          />
-                        </span>
-                        <span className="font-semibold text-white truncate">
-                          Life: {lifeInfo.title}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-5 flex items-center justify-center shrink-0 opacity-50">
-                          <VibeGlyph
-                            mood={selectedCombo.mood}
-                            life={selectedCombo.life}
-                            isCooked={true}
-                            color={selectedCombo.color}
-                            size="sm"
-                          />
-                        </span>
-                        <span className="font-semibold text-white font-mono tabular-nums truncate">
-                          Cook: {cookedCount}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-5 flex items-center justify-center shrink-0 opacity-50">
-                          <VibeGlyph
-                            mood={selectedCombo.mood}
-                            life={selectedCombo.life}
-                            isCooked={false}
-                            color={selectedCombo.color}
-                            size="sm"
-                          />
-                        </span>
-                        <span className="font-semibold text-white font-mono tabular-nums truncate">
-                          No Cook: {noCookCount}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()
-            ) : null}
+            {selectedDish ? renderDishDetailContent(false) : renderComboDetailContent()}
           </aside>
         )}
       </div>
+
+      {/* PORTRAIT / MOBILE BOTTOM SHEET (Option A — Phone & Portrait Tablet, full current device width via document.body Portal) */}
+      {showMobileBottomSheet &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-end">
+            <div
+              onClick={handleCloseRightPanel}
+              className="absolute inset-0 bg-black/25 animate-fadeIn"
+              aria-hidden="true"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={
+                selectedDish
+                  ? selectedDish.title ||
+                    (selectedDish.dishNumber ? `Dish No. ${selectedDish.dishNumber}` : 'Midnight Record')
+                  : selectedCombo?.label || 'Filter Summary'
+              }
+              className={`relative z-10 w-full bg-[#111111] border-t border-x border-[#262626] rounded-t-3xl px-5 sm:px-6 pt-3 pb-7 max-h-[82vh] overflow-y-auto shadow-2xl animate-slide-up flex flex-col ${
+                selectedCombo ? 'space-y-5' : ''
+              }`}
+            >
+              <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3 shrink-0" aria-hidden="true" />
+              {selectedDish ? renderDishDetailContent(true) : renderComboDetailContent()}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

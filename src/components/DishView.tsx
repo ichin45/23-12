@@ -142,7 +142,7 @@ export const DishView: React.FC<DishViewProps> = ({
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col space-y-8 animate-fadeIn text-[#f5f5f5] font-sans">
       {/* 1. Header: Dish 大標與簡短文字說明，滑動時不消失 */}
-      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 transition-all border-b border-white/5">
+      <header className="sticky top-14 z-40 bg-[#080808]/95 backdrop-blur-md py-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 transition-all">
         <div className="space-y-1.5">
           <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-[#ffffff] leading-none">
             Dish
